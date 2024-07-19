@@ -1,0 +1,10 @@
+# Dataset
+datasets/
+goodreads/
+
+# pycache
+__pycache__/
+*.pyc
+
+# venv
+.bookgnn

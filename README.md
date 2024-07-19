@@ -25,16 +25,68 @@ cf. reviews는 interaction중 review text가 긴 것을 따로 모아 놓은 것
 
 ```
 
+---
+# For non-Colab Users (For Linux, MacOS, Windows users)
 
-# 1. Data Preprocessing & Visualization
-`goodreads_books_poetry.json`, `goodreads_interactions_poetry.json`만 이용할 예정. 
+# 1. Dataset 📀
+## 1.1. Download
+Download *poetry* datasets from [Goodreads Book Graph Datasets](https://mengtingwan.github.io/data/goodreads.html) in `goodreads` folder.
+```
+mkdir goodreads
+cd goodreads
 
-자세한 내용은 `data_preprocessing.ipynb` 참고. rating 정보, similar books, author_id, book_id, user_id 등 이용할 예정.
+# Download
+wget https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/goodreads/byGenre/goodreads_books_poetry.json.gz
+wget https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/goodreads/byGenre/goodreads_interactions_poetry.json.gz
+wget https://datarepo.eng.ucsd.edu/mcauley_group/gdrive/goodreads/byGenre/goodreads_reviews_poetry.json.gz # not used now
 
-# 2. GCN, GraphSAGE, GAT, LightGCN training
-다음 참고.
+# unzip
+gunzip *.gz
+```
+
+Then the datasets are stored as following:
+```
+cd goodreads
+    .
+    └── goodreads_books_poetry.json
+    └── goodreads_interactions_poetry.json
+    └── goodreads_reviews_poetry.json
+```
+
+# 2. Environment Setup ⚙️
+For venv users (python==3.10.14 recommended)
+```
+python3.10 -m venv .bookgnn
+source .bookgnn/bin/activate
+pip3 install -r requirements.txt
+```
+
+For conda users
+```
+conda create -n bookgnn python==3.10.14
+conda activate bookgnn
+pip3 install -r requirements.txt
+```
 
 
->https://medium.com/@harshkjoya/connecting-the-dots-creating-network-graphs-from-pandas-dataframes-with-networkx-9c4fb60089cf
+# 3. Preprocess the Dataset 🔥
+Preprocess the downloaded datasets. We first only use `goodreads_books_poetry.json` and `goodreads_interactions_poetry.json`. The preprocessed results will be saved in the `datasets` folder.
 
->https://medium.com/stanford-cs224w/spotify-track-neural-recommender-system-51d266e31e16
+```
+python3 src/preprocess.py
+
+cd datasets
+    .
+    └── books_poetry.json
+    └── interactions_poetry.json
+```
+
+# 4. Training 🚀 (WIP)
+
+```
+python3 src/train.py
+```
+
+# 5. References
+
+[networkx](https://medium.com/@harshkjoya/connecting-the-dots-creating-network-graphs-from-pandas-dataframes-with-networkx-9c4fb60089cf), [Spotify RS](https://medium.com/stanford-cs224w/spotify-track-neural-recommender-system-51d266e31e16)
