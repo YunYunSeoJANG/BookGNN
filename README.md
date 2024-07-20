@@ -53,8 +53,10 @@ cd goodreads
     └── goodreads_reviews_poetry.json
 ```
 
-# 2. Environment Setup ⚙️
-For venv users (python==3.10.14 recommended)
+# 2. Environment Setup (WIP)⚙️
+I will make requirements.txt in a few days.
+
+For venv users (python==3.10.12 recommended)
 ```
 python3.10 -m venv .bookgnn
 source .bookgnn/bin/activate
@@ -63,7 +65,7 @@ pip3 install -r requirements.txt
 
 For conda users
 ```
-conda create -n bookgnn python==3.10.14
+conda create -n bookgnn python==3.10.12
 conda activate bookgnn
 pip3 install -r requirements.txt
 ```

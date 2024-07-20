@@ -19,53 +19,49 @@ import pickle
 from sklearn.metrics import roc_auc_score
 import matplotlib.pyplot as plt
 
-with open('datasets/interactions_poetry.json') as f:
+# Read interactions from preprocessed json file in data_preprocessing.ipynb
+with open('../datasets/interactions_poetry.json') as f:
 	users = pd.DataFrame(json.loads(line) for line in f)
 
-with open('datasets/books_poetry.json') as f:
+# is it necessary? it doesn't seem to be used
+with open('../datasets/books_poetry.json') as f:
 	items = pd.DataFrame(json.loads(line) for line in f)
 
+# Make an empty graph
 G = nx.Graph()
 
+# Add user nodes to the Graph (377799 users)
 G.add_nodes_from(users['user_id'], type = 'user')
-print('Num nodes:', G.number_of_nodes(), '. Num edges:', G.number_of_edges())
+print('Num nodes:', G.number_of_nodes(), '. Num edges:', G.number_of_edges()) # Num nodes: 377799 . Num edges: 0
+
+# Add item nodes to the graph (36514 books)
 G.add_nodes_from(users['book_id'], type = 'book')
 
+# Make a bipartite graph
 edges = [(row['user_id'], row['book_id']) for index, row in users.iterrows()]
 G.add_edges_from(edges)
 
-print('Num nodes:', G.number_of_nodes(), '. Num edges:', G.number_of_edges())
-
+# Find kcore of given graph; it might take some time(7 mins in my case)
+# kcore : a maximal subgraph that contains nodes of degree k or more
 kcore = 30
 G = nx.k_core(G, kcore)
-print('Num nodes:', G.number_of_nodes(), '. Num edges:', G.number_of_edges())
-
-list(G.nodes(data=True))
-
+# print('Num nodes:', G.number_of_nodes(), '. Num edges:', G.number_of_edges()) # Num nodes: 17738 . Num edges: 767616
 
 n_nodes, n_edges = G.number_of_nodes(), G.number_of_edges()
 
 sorted_nodes = sorted(list(G.nodes()))
 
+# change book_ids and user_ids into integers
 node2id = dict(zip(sorted_nodes, np.arange(n_nodes)))
 id2node = dict(zip(np.arange(n_nodes), sorted_nodes))
 
 G = nx.relabel_nodes(G, node2id)
-len(G.nodes)
 
+# get user and item indices from the graph
 user_idx = [i for i, v in enumerate(node2id.keys()) if 'user' in G.nodes[i]['type']]
 item_idx = [i for i, v in enumerate(node2id.keys()) if 'book' in G.nodes[i]['type']]
-print(len(user_idx), len(item_idx))
-
 n_user = len(user_idx)
 n_item = len(item_idx)
-
-n_users = len(user_idx)
-n_items = len(item_idx)
-
-print(n_user, n_item)
-
-
 
 num_nodes = G.number_of_nodes()
 edge_idx = torch.Tensor(np.array(G.edges()).T)
