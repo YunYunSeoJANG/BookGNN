@@ -63,7 +63,7 @@ source .bookgnn/bin/activate
 pip3 install -r requirements.txt
 ```
 
-For conda users
+For conda users (I haven't checked this yet)
 ```
 conda create -n bookgnn python==3.10.12
 conda activate bookgnn
@@ -86,9 +86,15 @@ cd datasets
 # 4. Training 🚀 (WIP)
 
 ```
-python3 src/train.py
+python3 src/training.py
 ```
 
-# 5. References
+# 5. Visualize 🚀 (WIP)
+
+```
+python3 src/visualize.py
+```
+
+# 6. References
 
 [networkx](https://medium.com/@harshkjoya/connecting-the-dots-creating-network-graphs-from-pandas-dataframes-with-networkx-9c4fb60089cf), [Spotify RS](https://medium.com/stanford-cs224w/spotify-track-neural-recommender-system-51d266e31e16)
