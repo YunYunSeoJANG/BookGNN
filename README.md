@@ -53,8 +53,7 @@ cd goodreads
     └── goodreads_reviews_poetry.json
 ```
 
-# 2. Environment Setup (WIP)⚙️
-I will make requirements.txt in a few days.
+# 2. Environment Setup ⚙️
 
 For venv users (python==3.10.12 recommended)
 ```
@@ -83,13 +82,13 @@ cd datasets
     └── interactions_poetry.json
 ```
 
-# 4. Training 🚀 (WIP)
+# 4. Training 🚀
 
 ```
 python3 src/training.py
 ```
 
-# 5. Visualize 🚀 (WIP)
+# 5. Visualize  (WIP)
 
 ```
 python3 src/visualize.py
