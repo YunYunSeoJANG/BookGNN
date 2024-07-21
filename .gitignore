@@ -2,9 +2,16 @@
 datasets/
 goodreads/
 
+# assets
+assets/
+
 # pycache
 __pycache__/
 *.pyc
 
 # venv
 .bookgnn
+
+# files
+*.pt
+*.pkl
