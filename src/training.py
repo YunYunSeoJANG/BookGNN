@@ -97,6 +97,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
             train_data, model, n_user, n_item, args["device"], batch_size = 500, 
             frac_sample = 1 - (0.5 * epoch / args["epochs"])
         )
+        
     # calculate embedding
     embed = model.get_embedding(train_data.edge_index)
     # calculate pos, negative scores using embedding
@@ -126,13 +127,13 @@ def train(model, datasets, optimizer, args, n_user, n_item):
     stats['train']['roc'].append(train_roc)
     stats['val']['loss'].append(val_loss)
     stats['val']['roc'].append(val_roc)
-
+    
     print(f"Epoch {epoch}; Train loss {loss}; Val loss {val_loss}; Train ROC {train_roc}; Val ROC {val_roc}")
 
     if epoch % 10 == 0: 
       # calculate recall @ K
       # Suggestion: K -> 15~30
-      val_recall = recall_at_k(val_data, model, n_user, n_item, k = 300, device = args["device"])
+      val_recall = 0 #recall_at_k(val_data, model, n_user, n_item, k = 10, device = args["device"])
       print(f"Val recall {val_recall}")
       stats['val']['recall'].append(val_recall)
 
@@ -192,14 +193,14 @@ def init_model(num_nodes, args, alpha = False):
     return model, optimizer 
 
 if __name__ == '__main__':
-    is_load_graph = not os.path.exists('assets/graph_kcore.gpickle')
+    is_load_graph = not os.path.exists('../assets/graph_kcore.gpickle')
 
     if is_load_graph:
         print("First run. Loading graph from json file and saving it as a gpickle file.")
         G = load_graph()
     else:
         print("Loading graph from gpickle file.")
-        with open('assets/graph_kcore.gpickle', 'rb') as f:
+        with open('../assets/graph_kcore.gpickle', 'rb') as f:
            G = pickle.load(f)
 
     G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
@@ -246,6 +247,7 @@ if __name__ == '__main__':
     train(model, datasets, optimizer, args, n_user, n_item)
 
     test(model, datasets['test'], args, n_user, n_item)
+    
 
 
     

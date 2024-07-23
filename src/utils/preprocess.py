@@ -22,6 +22,15 @@ def preprocess_graph(G):
     item_idx = [i for i, v in enumerate(node2id.keys()) if 'book' in G.nodes[i]['type']]
 
     n_user, n_item = len(user_idx), len(item_idx)
+    
+    new_user_idx = [i for i in range (n_user)]
+    new_item_idx = [i+n_user for i in range (n_item)]
+    
+    node2id = dict(zip(user_idx, new_user_idx))
+    temp = dict(zip(item_idx, new_item_idx))
+    node2id.update(temp)
+    
+    G = nx.relabel_nodes(G, node2id)
 
     new_user_idx = [i for i in range (n_user)]
     new_item_idx = [i+n_user for i in range (n_item)]

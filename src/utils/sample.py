@@ -59,7 +59,6 @@ def sample_hard_negative_edges(data, model, num_users, num_items, device=None, b
     positive_users, positive_items = data.edge_label_index
     num_edges = positive_users.size(0)
 
-    
     # Create a boolean mask for all the positive edges
     positive_mask = torch.zeros(num_users, num_items, device=device, dtype=torch.bool)
     positive_mask[positive_users, positive_items-num_users] = True
