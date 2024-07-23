@@ -1,7 +1,7 @@
 import torch    
 from sklearn.metrics import roc_auc_score
 
-def recall_at_k(data, model, n_user, n_item, k = 300, batch_size = 64, device = None):
+def recall_at_k(data, model, n_user, n_item, k = 15, batch_size = 64, device = None):
     with torch.no_grad():
         embeddings = model.get_embedding(data.edge_index)
         user_embeddings = embeddings[:n_user]
@@ -10,7 +10,13 @@ def recall_at_k(data, model, n_user, n_item, k = 300, batch_size = 64, device = 
     hits_list = []
     relevant_counts_list = []
 
-    data.edge_index[1,:]=torch.clamp(data.edge_index[1,:], max=n_item-1, min = 0)
+    edge_index = torch.zeros(data.edge_index.size()).int()
+    for i in range(len(data.edge_index[0])):
+      if (data.edge_index[0][i]>=n_user or data.edge_index[1][i]<n_user):
+        edge_index[1][i] = data.edge_index[0][i]
+        edge_index[0][i] = data.edge_index[1][i]
+      else:
+        edge_index[:,i] = data.edge_index[:,i]
 
     for batch_start in range(0, n_user, batch_size):
         batch_end = min(batch_start + batch_size, n_user)
@@ -18,18 +24,20 @@ def recall_at_k(data, model, n_user, n_item, k = 300, batch_size = 64, device = 
 
         # Calculate scores for all possible item pairs
         scores = torch.matmul(batch_user_embeddings, item_embeddings.t())
+        print(batch_user_embeddings.size(), item_embeddings.size())
 
         # Set the scores of message passing edges to negative infinity
-        mp_indices = ((data.edge_index[0] >= batch_start) & (data.edge_index[0] < batch_end)).nonzero(as_tuple=True)[0]
-        scores[data.edge_index[0, mp_indices] - batch_start, data.edge_index[1, mp_indices]] = -float("inf")
+        mp_indices = ((edge_index[0] >= batch_start) & (edge_index[0] < batch_end)).nonzero(as_tuple=True)[0]
+        scores[edge_index[0, mp_indices] - batch_start, edge_index[1, mp_indices]] = -float("inf")
 
+        print(scores.shape)
+        print(k)
         # Find the top k highest scoring items for each playlist in the batch
         _, top_k_indices = torch.topk(scores, k, dim=1)
 
         # Ground truth supervision edges
         ground_truth_edges = data.edge_label_index
-        ground_truth_edges[1,:]=torch.clamp(ground_truth_edges[1,:], max=n_item-1, min = 0)
-
+        
         # Create a mask to indicate if the top k items are in the ground truth supervision edges
         mask = torch.zeros(scores.shape, device=device, dtype=torch.bool)
         gt_indices = ((ground_truth_edges[0] >= batch_start) & (ground_truth_edges[0] < batch_end)).nonzero(as_tuple=True)[0]
