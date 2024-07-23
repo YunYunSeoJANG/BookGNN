@@ -26,18 +26,9 @@ def sample_negative_edges(data, num_users, num_items, device=None):
         positive_users[i] = positive_items[i]
         positive_items[i] = temp
 
-        
-    print(cnt)
-    print(positive_users)
-    print(positive_items)
-    print(positive_users.min(), positive_users.max())
-    print(positive_items.min(), positive_items.max())
-    print(num_users, num_items)
-
-
     # Create a mask tensor with the shape (num_users, num_items)
     mask = torch.zeros(num_users, num_items, device=device, dtype=torch.bool)
-    
+
     mask[positive_users, positive_items-num_users] = True
 
     # Flatten the mask tensor and get the indices of the negative edges

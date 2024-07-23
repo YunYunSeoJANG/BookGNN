@@ -149,7 +149,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
 
 
 def test(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, neg_edge_label = None):
-  
+
   model.eval()
   with torch.no_grad(): # want to save RAM 
 
@@ -181,6 +181,7 @@ def test(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, ne
   return loss, roc, neg_edge_index, neg_edge_label
 
 def init_model(num_nodes, args, alpha = False):
+    print("initialize model...")
     model = GCN(
         num_nodes = num_nodes, num_layers = args['num_layers'], 
         embedding_dim = args["emb_size"], conv_layer = args['conv_layer'], 
