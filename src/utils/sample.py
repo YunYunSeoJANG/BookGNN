@@ -18,15 +18,27 @@ def sample_negative_edges_nocheck(data, num_users, num_items, device = None):
 
 def sample_negative_edges(data, num_users, num_items, device=None):
     positive_users, positive_items = data.edge_label_index
-    #print(num_users, num_items)
-    #print(positive_users, positive_items)
 
-    positive_users=torch.clamp(positive_users, max=num_users-1, min = 0)
-    positive_items=torch.clamp(positive_items, max=num_items-1, min = 0)
+    cnt = 0
+    for i in range(len(positive_users)):
+      if (positive_users[i]>=num_users or positive_items[i]<num_users):
+        temp = positive_users[i]
+        positive_users[i] = positive_items[i]
+        positive_items[i] = temp
+
+        
+    print(cnt)
+    print(positive_users)
+    print(positive_items)
+    print(positive_users.min(), positive_users.max())
+    print(positive_items.min(), positive_items.max())
+    print(num_users, num_items)
+
 
     # Create a mask tensor with the shape (num_users, num_items)
     mask = torch.zeros(num_users, num_items, device=device, dtype=torch.bool)
-    mask[positive_users, positive_items] = True
+    
+    mask[positive_users, positive_items-num_users] = True
 
     # Flatten the mask tensor and get the indices of the negative edges
     flat_mask = mask.flatten()
@@ -56,12 +68,10 @@ def sample_hard_negative_edges(data, model, num_users, num_items, device=None, b
     positive_users, positive_items = data.edge_label_index
     num_edges = positive_users.size(0)
 
-    positive_users=torch.clamp(positive_users, max=num_users-1, min = 0)
-    positive_items=torch.clamp(positive_items, max=num_items-1, min = 0)
-
+    
     # Create a boolean mask for all the positive edges
     positive_mask = torch.zeros(num_users, num_items, device=device, dtype=torch.bool)
-    positive_mask[positive_users, positive_items] = True
+    positive_mask[positive_users, positive_items-num_users] = True
 
     neg_edges_list = []
     neg_edge_label_list = []
