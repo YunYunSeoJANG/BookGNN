@@ -23,6 +23,7 @@ from model.gcn import GCN, BPRLoss
 from utils.preprocess import preprocess_graph, make_data
 from utils.sample import sample_negative_edges, sample_hard_negative_edges
 from utils.metrics import metrics, recall_at_k
+from utils.evaluation import initialize_plot, update_plot
 
 
 def load_graph():
@@ -66,86 +67,92 @@ def load_graph():
 
 # Train
 def train(model, datasets, optimizer, args, n_user, n_item):
-  print(f"Beginning training for {model.name}")
+    print(f"Beginning training for {model.name}")
 
-  train_data = datasets["train"]
-  val_data = datasets["val"]
+    train_data = datasets["train"]
+    val_data = datasets["val"]
 
-  stats = {
-      'train': {
-        'loss': [],
-        'roc' : []
-      },
-      'val': {
-        'loss': [],
-        'recall': [], 
-        'roc' : []
-      }
-
-  }
-  val_neg_edge, val_neg_label = None, None
-  for epoch in range(args["epochs"]): # loop over each epoch 
-    model.train()
-    optimizer.zero_grad()
+    stats = {
+        'train': {
+            'loss': [],
+            'roc': []
+        },
+        'val': {
+            'loss': [],
+            'recall': [],
+            'roc': []
+        }
+    }
+    val_neg_edge, val_neg_label = None, None
     
-    # obtain negative sample
-    if args['neg_samp'] == "random":
-      neg_edge_index, neg_edge_label = sample_negative_edges(train_data, n_user, n_item, args["device"])
-    elif args['neg_samp'] == "hard":
-      if epoch % 5 == 0: 
-        neg_edge_index, neg_edge_label = sample_hard_negative_edges(
-            train_data, model, n_user, n_item, args["device"], batch_size = 500, 
-            frac_sample = 1 - (0.5 * epoch / args["epochs"])
+    # Initialize the plot
+    fig, ax, train_loss_line, val_loss_line, train_roc_line, val_roc_line = initialize_plot(model.name)
+    
+    for epoch in range(args["epochs"]):
+        model.train()
+        optimizer.zero_grad()
+
+        # obtain negative sample
+        if args['neg_samp'] == "random":
+            neg_edge_index, neg_edge_label = sample_negative_edges(train_data, n_user, n_item, args["device"])
+        elif args['neg_samp'] == "hard":
+            if epoch % 5 == 0:
+                neg_edge_index, neg_edge_label = sample_hard_negative_edges(
+                    train_data, model, n_user, n_item, args["device"], batch_size=500,
+                    frac_sample=1 - (0.5 * epoch / args["epochs"])
+                )
+
+        # calculate embedding
+        embed = model.get_embedding(train_data.edge_index)
+        # calculate pos, negative scores using embedding
+        pos_scores = model.predict_link_embedding(embed, train_data.edge_label_index)
+        neg_scores = model.predict_link_embedding(embed, neg_edge_index)
+
+        # concatenate pos, neg scores together and evaluate loss 
+        scores = torch.cat((pos_scores, neg_scores), dim=0)
+        labels = torch.cat((train_data.edge_label, neg_edge_label), dim=0)
+
+        # calculate loss function 
+        if args['loss_fn'] == "BCE": 
+            loss = model.link_pred_loss(scores, labels)
+        elif args['loss_fn'] == "BPR":
+            loss = model.recommendation_loss(pos_scores, neg_scores, lambda_reg=0)
+
+        train_roc = metrics(labels, scores)
+
+        loss.backward()
+        optimizer.step()
+
+        val_loss, val_roc, val_neg_edge, val_neg_label = test(
+            model, val_data, args, n_user, n_item, epoch, val_neg_edge, val_neg_label
         )
-    # calculate embedding
-    embed = model.get_embedding(train_data.edge_index)
-    # calculate pos, negative scores using embedding
-    pos_scores = model.predict_link_embedding(embed, train_data.edge_label_index)
-    neg_scores = model.predict_link_embedding(embed, neg_edge_index)
 
-    # concatenate pos, neg scores together and evaluate loss 
-    scores = torch.cat((pos_scores, neg_scores), dim = 0)
-    labels = torch.cat((train_data.edge_label, neg_edge_label), dim = 0)
+        stats['train']['loss'].append(loss.item())
+        stats['train']['roc'].append(train_roc)
+        stats['val']['loss'].append(val_loss.item())
+        stats['val']['roc'].append(val_roc)
 
-    # calculate loss function 
-    if args['loss_fn'] == "BCE": 
-      loss = model.link_pred_loss(scores, labels)
-    elif args['loss_fn'] == "BPR":
-      loss = model.recommendation_loss(pos_scores, neg_scores, lambda_reg = 0)
-    
-    train_roc = metrics(labels, scores)
+        print(f"Epoch {epoch}; Train loss {loss.item()}; Val loss {val_loss.item()}; Train ROC {train_roc}; Val ROC {val_roc}")
 
-    loss.backward()
-    optimizer.step()
+        if epoch % 10 == 0: 
+            # calculate recall @ K
+            # Suggestion: K -> 15~30
+            val_recall = recall_at_k(val_data, model, n_user, n_item, k=300, device=args["device"])
+            print(f"Val recall {val_recall}")
+            stats['val']['recall'].append(val_recall)
 
-    val_loss, val_roc, val_neg_edge, val_neg_label = test(
-        model, val_data, args, n_user, n_item, epoch, val_neg_edge, val_neg_label
-    )
+        if epoch % 20 == 0:
+            # save embeddings for future visualization 
+            path = os.path.join("model_embeddings", model.name)
+            if not os.path.exists(path):
+                os.makedirs(path)
+            torch.save(model.embedding.weight, os.path.join("model_embeddings", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
 
-    stats['train']['loss'].append(loss)
-    stats['train']['roc'].append(train_roc)
-    stats['val']['loss'].append(val_loss)
-    stats['val']['roc'].append(val_roc)
+        # Update the plot
+        update_plot(stats, [train_loss_line, val_loss_line, train_roc_line, val_roc_line], ax)
 
-    print(f"Epoch {epoch}; Train loss {loss}; Val loss {val_loss}; Train ROC {train_roc}; Val ROC {val_roc}")
-
-    if epoch % 10 == 0: 
-      # calculate recall @ K
-      # Suggestion: K -> 15~30
-      val_recall = recall_at_k(val_data, model, n_user, n_item, k = 300, device = args["device"])
-      print(f"Val recall {val_recall}")
-      stats['val']['recall'].append(val_recall)
-
-    if epoch % 20 == 0: 
-
-      # save embeddings for future visualization 
-      path = os.path.join("model_embeddings", model.name)
-      if not os.path.exists(path):
-        os.makedirs(path)
-      torch.save(model.embedding.weight, os.path.join("model_embeddings", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
-
-  pickle.dump(stats, open(f"model_stats/{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl", "wb"))
-  return stats
+    pickle.dump(stats, open(f"model_stats/{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl", "wb"))
+    return stats
 
 
 def test(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, neg_edge_label = None):
@@ -200,51 +207,48 @@ if __name__ == '__main__':
     else:
         print("Loading graph from gpickle file.")
         with open('assets/graph_kcore.gpickle', 'rb') as f:
-           G = pickle.load(f)
+            G = pickle.load(f)
 
     G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
     n_nodes = G.number_of_nodes()
     train_split, val_split, test_split = make_data(G)
 
-    # create a dictionary of the dataset splits 
     datasets = {
-        'train':train_split, 
-        'val':val_split, 
-        'test': test_split 
+        'train': train_split,
+        'val': val_split,
+        'test': test_split
     }
 
-    # Modify the arguments as needed
-    # You might want to change the epoches, num_layers, conv_layer, neg_samp, etc.
     args = {
-        'device' : 'cuda' if torch.cuda.is_available() else 'cpu',
-        'emb_size' : 64,
+        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
+        'emb_size': 64,
         'weight_decay': 1e-5,
         'lr': 0.01,
         'loss_fn': "BPR",
         'epochs': 301, # [301, 150]
-        'num_layers' :  3, # [3, 4]
+        'num_layers': 3, # [3, 4]
         'conv_layer': "LGC", # ["LGC", "GAT", "SAGE"]
         'neg_samp': "random", # ["random", "hard"]
     }
 
     model, optimizer = init_model(n_nodes, args)
 
-    # send data, model to GPU if available
     user_idx = torch.Tensor(user_idx).type(torch.int64).to(args["device"])
-    item_idx =torch.Tensor(item_idx).type(torch.int64).to(args["device"])
+    item_idx = torch.Tensor(item_idx).type(torch.int64).to(args["device"])
     datasets['train'].to(args['device'])
     datasets['val'].to(args['device'])
     datasets['test'].to(args['device'])
     model.to(args["device"])
-    
-    # create directory to save model_stats
+
     MODEL_STATS_DIR = "model_stats"
     if not os.path.exists(MODEL_STATS_DIR):
-      os.makedirs(MODEL_STATS_DIR)
+        os.makedirs(MODEL_STATS_DIR)
 
+    # Construct a model name from the args for clarity
+    model_name = f"GCN_{args['conv_layer']}_layers{args['num_layers']}_e{args['emb_size']}_nodes{n_nodes}"
 
     train(model, datasets, optimizer, args, n_user, n_item)
-
+\
     test(model, datasets['test'], args, n_user, n_item)
 
 
