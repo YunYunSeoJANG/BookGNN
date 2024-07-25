@@ -192,6 +192,17 @@ def init_model(num_nodes, args, alpha = False):
     return model, optimizer 
 
 if __name__ == '__main__':
+    parser = ArgumentParser()
+
+    parser.add_argument('--epochs', type=int, default=301)
+    parser.add_argument('--num_layers', type=int, default=4)
+    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--conv_layer', type=str, default="LGC", choices=["LGC", "GAT", "SAGE"]) # ["LGC", "GAT", "SAGE"]
+    parser.add_argument('--neg_samp', type=str, default="random", choices=["random", "hard"]) # ["random", "hard"]
+
+    parse_args = parser.parse_args()
+
+
     is_load_graph = not os.path.exists('assets/graph_kcore.gpickle')
 
     if is_load_graph:
@@ -219,12 +230,12 @@ if __name__ == '__main__':
         'device' : 'cuda' if torch.cuda.is_available() else 'cpu',
         'emb_size' : 64,
         'weight_decay': 1e-5,
-        'lr': 0.01,
+        'lr': parse_args.lr,
         'loss_fn': "BPR",
-        'epochs': 301, # [301, 150]
-        'num_layers' :  3, # [3, 4]
-        'conv_layer': "LGC", # ["LGC", "GAT", "SAGE"]
-        'neg_samp': "random", # ["random", "hard"]
+        'epochs': parse_args.epochs, # [301, 150]
+        'num_layers' : parse_args.num_layers, # [3, 4]
+        'conv_layer': parse_args.conv_layer, # ["LGC", "GAT", "SAGE"]
+        'neg_samp': parse_args.neg_samp, # ["random", "hard"]
     }
 
     model, optimizer = init_model(n_nodes, args)
