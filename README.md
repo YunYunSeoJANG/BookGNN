@@ -87,7 +87,7 @@ cd datasets
 ```
 ./scripts/train.sh
 ```
-If you want parallized trianing, you can add `CUDA_VISIBLE_DEVICES=0` condition in train.sh
+If you want parallelized trianing with multiple GPUs, you can add `CUDA_VISIBLE_DEVICES=0` condition in train.sh
 
 # 5. Visualize  (WIP)
 

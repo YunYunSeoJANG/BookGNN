@@ -23,7 +23,7 @@ from model.gcn import GCN, BPRLoss
 from utils.preprocess import preprocess_graph, make_data
 from utils.sample import sample_negative_edges, sample_hard_negative_edges
 from utils.metrics import metrics, recall_at_k
-from utils.evaluation import initialize_plot, update_plot
+from utils.evaluation import evaluate_model, plot_training_stats
 
 
 def load_graph():
@@ -85,9 +85,6 @@ def train(model, datasets, optimizer, args, n_user, n_item):
     }
     val_neg_edge, val_neg_label = None, None
     
-    # Initialize the plot
-    fig, ax, train_loss_line, val_loss_line, train_roc_line, val_roc_line = initialize_plot(model.name)
-    
     for epoch in range(args["epochs"]):
         model.train()
         optimizer.zero_grad()
@@ -147,9 +144,6 @@ def train(model, datasets, optimizer, args, n_user, n_item):
             if not os.path.exists(path):
                 os.makedirs(path)
             torch.save(model.embedding.weight, os.path.join("model_embeddings", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
-
-        # Update the plot
-        update_plot(stats, [train_loss_line, val_loss_line, train_roc_line, val_roc_line], ax)
 
     pickle.dump(stats, open(f"model_stats/{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl", "wb"))
     return stats
