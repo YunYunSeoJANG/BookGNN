@@ -22,12 +22,15 @@ def load_stats(stats_file):
         print(f"No stats found at {stats_path}")
         return None
 
-def plot_training_stats(stats_file):
+
+def plot_training_stats(stats_file, args):
     stats = load_stats(stats_file)
     if not stats:
         return
 
-    model_name, loss_fn, neg_samp = stats_file.replace('.pkl', '').split('_', 2)
+    model_name = f"GCN_{args['conv_layer']}_layers{args['num_layers']}_e{args['emb_size']}_nodes{args['n_nodes']}"
+    loss_fn = args['loss_fn']
+    neg_samp = args['neg_samp']
     
     fig, ax = plt.subplots(1, 2, figsize=(14, 5))
     
@@ -40,8 +43,8 @@ def plot_training_stats(stats_file):
     ax[1].set_ylabel('ROC AUC')
     
     epochs = range(len(stats['train']['loss']))
-    train_loss = [loss.cpu().item() for loss in stats['train']['loss']]
-    val_loss = [loss.cpu().item() for loss in stats['val']['loss']]
+    train_loss = [loss for loss in stats['train']['loss']]
+    val_loss = [loss for loss in stats['val']['loss']]
     train_roc = stats['train']['roc']
     val_roc = stats['val']['roc']
     
@@ -63,14 +66,24 @@ def plot_training_stats(stats_file):
     print(f"Plot saved to {save_path}")
     plt.show()
 
-def evaluate_model(stats_file, model_file):
+def evaluate_model(stats_file, model_fil, args):
     stats = load_stats(stats_file)
     if not stats:
         return
 
-    model_name, loss_fn, neg_samp = stats_file.replace('.pkl', '').split('_', 2)
+    stats = load_stats(stats_file)
+    if not stats:
+        return
+
+    parts = stats_file.replace('.pkl', '').rsplit('_', 3)
+    if len(parts) < 4:
+        print(f"Unexpected file name format: {stats_file}")
+        return
+    model_name = f"GCN_{args['conv_layer']}_layers{args['num_layers']}_e{args['emb_size']}_nodes{args['n_nodes']}"
+    loss_fn = args['loss_fn']
+    neg_samp = args['neg_samp']
+    conv_layer = args['conv_layer']
     
-    # Load the graph data
     with open('../assets/graph_kcore.gpickle', 'rb') as f:
         G = pickle.load(f)
     
@@ -86,24 +99,20 @@ def evaluate_model(stats_file, model_file):
         'loss_fn': loss_fn,
         'epochs': 301,
         'num_layers': 4,
-        'conv_layer': model_name.split('_')[1],
+        'conv_layer': conv_layer,
         'neg_samp': neg_samp,
     }
     
-    # Initialize the model
     model = GCN(
         num_nodes=n_nodes, num_layers=args['num_layers'],
         embedding_dim=args["emb_size"], conv_layer=args['conv_layer'], 
         alpha_learnable=False
     )
     model.to(args["device"])
-
-    # Load the trained model weights
+    
+    model_file = os.path.join(MODEL_STATS_DIR, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_final.pt")
     model.load_state_dict(torch.load(model_file, map_location=args["device"]))
 
-    # Perform evaluation on the test data
-    test_loss, test_roc, _, _ = test(model, test_split, args, n_user, n_item)
-    print(f"Test Loss: {test_loss}, Test ROC: {test_roc}")
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -111,5 +120,5 @@ if __name__ == '__main__':
     parser.add_argument('--model_file', type=str, required=True, help='Path to the model file')
     args = parser.parse_args()
     
-    plot_training_stats(args.stats_file)
-    evaluate_model(args.stats_file, args.model_file)
+    plot_training_stats(args['stats_file'])
+    evaluate_model(args['stats_file'], args['model_file'])

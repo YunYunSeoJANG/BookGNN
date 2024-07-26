@@ -204,14 +204,14 @@ if __name__ == '__main__':
     parse_args = parser.parse_args()
 
 
-    is_load_graph = not os.path.exists('assets/graph_kcore.gpickle')
+    is_load_graph = not os.path.exists('../assets/graph_kcore.gpickle')
 
     if is_load_graph:
         print("First run. Loading graph from json file and saving it as a gpickle file.")
         G = load_graph()
     else:
         print("Loading graph from gpickle file.")
-        with open('assets/graph_kcore.gpickle', 'rb') as f:
+        with open('../assets/graph_kcore.gpickle', 'rb') as f:
            G = pickle.load(f)
 
     G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
@@ -237,6 +237,7 @@ if __name__ == '__main__':
         'num_layers' : parse_args.num_layers, # [3, 4]
         'conv_layer': parse_args.conv_layer, # ["LGC", "GAT", "SAGE"]
         'neg_samp': parse_args.neg_samp, # ["random", "hard"]
+        'n_nodes': n_nodes # [17738]
     }
 
     model, optimizer = init_model(n_nodes, args)
@@ -263,10 +264,7 @@ if __name__ == '__main__':
     torch.save(model.state_dict(), model_file)
 
     stats_file = f"{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl"
-    plot_training_stats(stats_file)
-    evaluate_model(stats_file, model_file)
-
-    test(model, datasets['test'], args, n_user, n_item)
-
+    plot_training_stats(stats_file, args)
+    evaluate_model(stats_file, model_file, args)
 
     
