@@ -89,6 +89,8 @@ cd datasets
 ```
 If you want parallelized trianing with multiple GPUs, you can add `CUDA_VISIBLE_DEVICES=0` condition in train.sh
 
+You can find out the result plot (train/val loss, train/val ROC) in /train_result_plots
+
 # 5. Visualize  (WIP)
 
 ```
