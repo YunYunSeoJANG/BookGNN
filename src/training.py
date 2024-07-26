@@ -23,8 +23,7 @@ from model.gcn import GCN, BPRLoss
 from utils.preprocess import preprocess_graph, make_data
 from utils.sample import sample_negative_edges, sample_hard_negative_edges
 from utils.metrics import metrics, recall_at_k
-from utils.evaluation import evaluate_model, plot_training_stats
-
+from evaluation import evaluate_model, plot_training_stats
 
 
 def load_graph():
