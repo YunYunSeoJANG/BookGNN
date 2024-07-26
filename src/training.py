@@ -199,6 +199,17 @@ def init_model(num_nodes, args, alpha = False):
     return model, optimizer 
 
 if __name__ == '__main__':
+    parser = ArgumentParser()
+
+    parser.add_argument('--epochs', type=int, default=301)
+    parser.add_argument('--num_layers', type=int, default=4)
+    parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--conv_layer', type=str, default="LGC", choices=["LGC", "GAT", "SAGE"]) # ["LGC", "GAT", "SAGE"]
+    parser.add_argument('--neg_samp', type=str, default="random", choices=["random", "hard"]) # ["random", "hard"]
+
+    parse_args = parser.parse_args()
+
+
     is_load_graph = not os.path.exists('assets/graph_kcore.gpickle')
 
     if is_load_graph:
@@ -207,48 +218,60 @@ if __name__ == '__main__':
     else:
         print("Loading graph from gpickle file.")
         with open('assets/graph_kcore.gpickle', 'rb') as f:
-            G = pickle.load(f)
+           G = pickle.load(f)
 
     G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
     n_nodes = G.number_of_nodes()
     train_split, val_split, test_split = make_data(G)
 
+    # create a dictionary of the dataset splits 
     datasets = {
-        'train': train_split,
-        'val': val_split,
-        'test': test_split
+        'train':train_split, 
+        'val':val_split, 
+        'test': test_split 
     }
 
+    # Modify the arguments as needed
+    # You might want to change the epoches, num_layers, conv_layer, neg_samp, etc.
     args = {
-        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-        'emb_size': 64,
+        'device' : 'cuda' if torch.cuda.is_available() else 'cpu',
+        'emb_size' : 64,
         'weight_decay': 1e-5,
-        'lr': 0.01,
+        'lr': parse_args.lr,
         'loss_fn': "BPR",
-        'epochs': 301, # [301, 150]
-        'num_layers': 3, # [3, 4]
-        'conv_layer': "LGC", # ["LGC", "GAT", "SAGE"]
-        'neg_samp': "random", # ["random", "hard"]
+        'epochs': parse_args.epochs, # [301, 150]
+        'num_layers' : parse_args.num_layers, # [3, 4]
+        'conv_layer': parse_args.conv_layer, # ["LGC", "GAT", "SAGE"]
+        'neg_samp': parse_args.neg_samp, # ["random", "hard"]
     }
 
     model, optimizer = init_model(n_nodes, args)
 
+    # send data, model to GPU if available
     user_idx = torch.Tensor(user_idx).type(torch.int64).to(args["device"])
-    item_idx = torch.Tensor(item_idx).type(torch.int64).to(args["device"])
+    item_idx =torch.Tensor(item_idx).type(torch.int64).to(args["device"])
     datasets['train'].to(args['device'])
     datasets['val'].to(args['device'])
     datasets['test'].to(args['device'])
     model.to(args["device"])
-
+    
+    # create directory to save model_stats
     MODEL_STATS_DIR = "model_stats"
     if not os.path.exists(MODEL_STATS_DIR):
-        os.makedirs(MODEL_STATS_DIR)
+      os.makedirs(MODEL_STATS_DIR)
 
     # Construct a model name from the args for clarity
     model_name = f"GCN_{args['conv_layer']}_layers{args['num_layers']}_e{args['emb_size']}_nodes{n_nodes}"
 
-    train(model, datasets, optimizer, args, n_user, n_item)
-\
+    stats = train(model, datasets, optimizer, args, n_user, n_item)
+
+    model_file = os.path.join(MODEL_STATS_DIR, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_final.pt")
+    torch.save(model.state_dict(), model_file)
+
+    stats_file = f"{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl"
+    plot_training_stats(stats_file)
+    evaluate_model(stats_file, model_file)
+
     test(model, datasets['test'], args, n_user, n_item)
 
 

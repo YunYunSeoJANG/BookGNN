@@ -85,8 +85,9 @@ cd datasets
 # 4. Training 🚀
 
 ```
-python3 src/training.py
+./scripts/train.sh
 ```
+If you want parallized trianing, you can add `CUDA_VISIBLE_DEVICES=0` condition in train.sh
 
 # 5. Visualize  (WIP)
 
