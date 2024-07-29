@@ -19,12 +19,14 @@ from sklearn.metrics import roc_auc_score
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 
+import wandb
+from sweep_config import sweep_config, sweep_id
+
 from model.gcn import GCN, BPRLoss
 from utils.preprocess import preprocess_graph, make_data
 from utils.sample import sample_negative_edges, sample_hard_negative_edges
 from utils.metrics import metrics, recall_at_k
 from utils.evaluation import evaluate_model, plot_training_stats
-
 
 def load_graph():
     # Read interactions from preprocessed json file in data_preprocessing.ipynb
@@ -129,6 +131,15 @@ def train(model, datasets, optimizer, args, n_user, n_item):
         stats['val']['loss'].append(val_loss.item())
         stats['val']['roc'].append(val_roc)
 
+        # Log metrics to wandb
+        wandb.log({
+            "epoch": epoch,
+            "train_loss": loss.item(),
+            "val_loss": val_loss.item(),
+            "train_roc": train_roc,
+            "val_roc": val_roc
+        })
+
         print(f"Epoch {epoch}; Train loss {loss.item()}; Val loss {val_loss.item()}; Train ROC {train_roc}; Val ROC {val_roc}")
 
         if epoch % 10 == 0: 
@@ -137,6 +148,8 @@ def train(model, datasets, optimizer, args, n_user, n_item):
             val_recall = recall_at_k(val_data, model, n_user, n_item, k=300, device=args["device"])
             print(f"Val recall {val_recall}")
             stats['val']['recall'].append(val_recall)
+            # Log recall to wandb
+            wandb.log({"val_recall": val_recall})
 
         if epoch % 20 == 0:
             # save embeddings for future visualization 
@@ -193,16 +206,14 @@ def init_model(num_nodes, args, alpha = False):
     return model, optimizer 
 
 if __name__ == '__main__':
-    parser = ArgumentParser()
 
-    parser.add_argument('--epochs', type=int, default=301)
-    parser.add_argument('--num_layers', type=int, default=4)
-    parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--conv_layer', type=str, default="LGC", choices=["LGC", "GAT", "SAGE"]) # ["LGC", "GAT", "SAGE"]
-    parser.add_argument('--neg_samp', type=str, default="random", choices=["random", "hard"]) # ["random", "hard"]
+    wandb.init()
+    config = wandb.config
 
-    parse_args = parser.parse_args()
-
+    run_name = (f"conv_{config.conv_layer}_epochs_{config.epochs}_"
+                f"layers_{config.num_layers}_lr_{config.lr}_"
+                f"neg_{config.neg_samp}")
+    wandb.run.name = run_name
 
     is_load_graph = not os.path.exists('../assets/graph_kcore.gpickle')
 
@@ -226,18 +237,20 @@ if __name__ == '__main__':
     }
 
     # Modify the arguments as needed
-    # You might want to change the epoches, num_layers, conv_layer, neg_samp, etc.
+    # You might want to change the epoches, num_layers, conv_layer, neg_samp, etc. at sweep_config.py
     args = {
-        'device' : 'cuda' if torch.cuda.is_available() else 'cpu',
-        'emb_size' : 64,
-        'weight_decay': 1e-5,
-        'lr': parse_args.lr,
+        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
+        'emb_size': config.emb_size,
+        'weight_decay': config.weight_decay,
+        'lr': config.lr,
         'loss_fn': "BPR",
-        'epochs': parse_args.epochs, # [301, 150]
-        'num_layers' : parse_args.num_layers, # [3, 4]
-        'conv_layer': parse_args.conv_layer, # ["LGC", "GAT", "SAGE"]
-        'neg_samp': parse_args.neg_samp, # ["random", "hard"]
-        'n_nodes': n_nodes # [17738]
+        'epochs': config.epochs,
+        'num_layers': config.num_layers,
+        'conv_layer': config.conv_layer,
+        'neg_samp': config.neg_samp,
+        'n_nodes': n_nodes,
+        'gat_dropout': config.gat_dropout,
+        'gat_n_heads': config.gat_n_heads
     }
 
     model, optimizer = init_model(n_nodes, args)
@@ -266,5 +279,8 @@ if __name__ == '__main__':
     stats_file = f"{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl"
     plot_training_stats(stats_file, args)
     evaluate_model(stats_file, model_file, args)
+
+    wandb.agent(sweep_id, function=train)
+    wandb.finish()
 
     
