@@ -149,7 +149,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
     return stats
 
 
-def test(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, neg_edge_label = None):
+def val(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, neg_edge_label = None):
 
   model.eval()
   with torch.no_grad(): # want to save RAM 

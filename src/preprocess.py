@@ -1,8 +1,8 @@
 import json, pandas as pd
 import os
 
-def preprocess_books():
-    with open('../goodreads/goodreads_books_poetry.json') as f:
+def preprocess_books(path = '../goodreads/goodreads_books_poetry.json', save = '../datasets/books_poetry.json'):
+    with open(path) as f:
         df = pd.DataFrame(json.loads(line) for line in f)
 
     aut=df.loc[:,'authors']
@@ -16,15 +16,15 @@ def preprocess_books():
     df = df.loc[:,['book_id', 'average_rating', 'ratings_count', 'authors', 'similar_books', 'title', 'url']]
 
     os.makedirs('../datasets', exist_ok=True)
-    df.to_json('../datasets/books_poetry.json', orient='records', lines=True)
+    df.to_json(save, orient='records', lines=True)
 
-def preprocess_interactions():
-    with open('../goodreads/goodreads_interactions_poetry.json') as f:
+def preprocess_interactions(path = '../goodreads/goodreads_interactions_poetry.json', save = '../datasets/interactions_poetry.json'):
+    with open(path) as f:
         df = pd.DataFrame(json.loads(line) for line in f)
 
     df = df.loc[:,['book_id', 'user_id', 'is_read', 'rating']]
 
-    df.to_json('../datasets/interactions_poetry.json', orient='records', lines=True)
+    df.to_json(save, orient='records', lines=True)
 
 
 if __name__ == '__main__':
