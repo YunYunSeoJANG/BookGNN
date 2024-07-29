@@ -205,14 +205,31 @@ def init_model(num_nodes, args, alpha = False):
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
     return model, optimizer 
 
+def get_config_value(config, key, default_value):
+    return getattr(config, key, default_value)
+
 if __name__ == '__main__':
 
     wandb.init()
     config = wandb.config
 
-    run_name = (f"conv_{config.conv_layer}_epochs_{config.epochs}_"
-                f"layers_{config.num_layers}_lr_{config.lr}_"
-                f"neg_{config.neg_samp}")
+    args = {
+        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
+        'emb_size': get_config_value(config, 'emb_size', 64),
+        'weight_decay': get_config_value(config, 'weight_decay', 1e-5),
+        'lr': get_config_value(config, 'lr', 0.01),
+        'loss_fn': "BPR",
+        'epochs': get_config_value(config, 'epochs', 301),
+        'num_layers': get_config_value(config, 'num_layers', 4),
+        'conv_layer': get_config_value(config, 'conv_layer', 'LGC'),
+        'neg_samp': get_config_value(config, 'neg_samp', 'random'),
+        'gat_dropout': get_config_value(config, 'gat_dropout', 0.2),
+        'gat_n_heads': get_config_value(config, 'gat_n_heads', 1)
+    }
+
+    run_name = (f"conv_{args['conv_layer']}_epochs_{args['epochs']}_"
+                f"layers_{args['num_layers']}_lr_{args['lr']}_"
+                f"neg_{args['neg_samp']}")
     wandb.run.name = run_name
 
     is_load_graph = not os.path.exists('../assets/graph_kcore.gpickle')
@@ -234,23 +251,6 @@ if __name__ == '__main__':
         'train':train_split, 
         'val':val_split, 
         'test': test_split 
-    }
-
-    # Modify the arguments as needed
-    # You might want to change the epoches, num_layers, conv_layer, neg_samp, etc. at sweep_config.py
-    args = {
-        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-        'emb_size': config.emb_size,
-        'weight_decay': config.weight_decay,
-        'lr': config.lr,
-        'loss_fn': "BPR",
-        'epochs': config.epochs,
-        'num_layers': config.num_layers,
-        'conv_layer': config.conv_layer,
-        'neg_samp': config.neg_samp,
-        'n_nodes': n_nodes,
-        'gat_dropout': config.gat_dropout,
-        'gat_n_heads': config.gat_n_heads
     }
 
     model, optimizer = init_model(n_nodes, args)
