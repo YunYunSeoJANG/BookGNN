@@ -98,6 +98,7 @@ wandb login
 
 cd src
 wandb sweep sweep_config.yaml
+cd ..
 wandb agent pljh0906/Prometheus-GNN-Book-Recommendations/<sweep id> --count <count>
 ```
 

@@ -1,5 +1,6 @@
 program: /home/elicer/BookGNN/src/training.py
-method: random # bayes
+project: Prometheus-GNN-Book-Recommendations
+method: random # bayes, grid
 metric:
   name: val_recall
   goal: maximize
