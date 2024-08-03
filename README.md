@@ -96,9 +96,7 @@ You can find out the result plot (train/val loss, train/val ROC) in /train_resul
 ```
 wandb login
 
-cd src
-wandb sweep sweep_config.yaml
-cd ..
+wandb sweep src/sweep_config.yaml
 wandb agent pljh0906/Prometheus-GNN-Book-Recommendations/<sweep id> --count <count>
 ```
 
