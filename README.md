@@ -91,7 +91,19 @@ If you want parallelized trianing with multiple GPUs, you can add `CUDA_VISIBLE_
 
 You can find out the result plot (train/val loss, train/val ROC) in /train_result_plots
 
-# 5. Visualize  (WIP)
+# 5. Wandb Parameter Sweeping 🧹
+
+```
+wandb login
+
+cd src
+wandb sweep sweep_config.yaml
+wandb agent pljh0906/Prometheus-GNN-Book-Recommendations/<sweep id> --count <count>
+```
+
+
+
+# 6. Visualize  (WIP)
 
 ```
 python3 src/visualize.py

@@ -23,49 +23,6 @@ def load_stats(stats_file):
         return None
 
 
-def plot_training_stats(stats_file, args):
-    stats = load_stats(stats_file)
-    if not stats:
-        return
-
-    model_name = f"GCN_{args['conv_layer']}_layers{args['num_layers']}_e{args['emb_size']}_nodes{args['n_nodes']}"
-    loss_fn = args['loss_fn']
-    neg_samp = args['neg_samp']
-    
-    fig, ax = plt.subplots(1, 2, figsize=(14, 5))
-    
-    ax[0].set_title(f'{model_name} Training and Validation Loss')
-    ax[0].set_xlabel('Epoch')
-    ax[0].set_ylabel('Loss')
-    
-    ax[1].set_title(f'{model_name} Training and Validation ROC')
-    ax[1].set_xlabel('Epoch')
-    ax[1].set_ylabel('ROC AUC')
-    
-    epochs = range(len(stats['train']['loss']))
-    train_loss = [loss for loss in stats['train']['loss']]
-    val_loss = [loss for loss in stats['val']['loss']]
-    train_roc = stats['train']['roc']
-    val_roc = stats['val']['roc']
-    
-    ax[0].plot(epochs, train_loss, label='Train Loss')
-    ax[0].plot(epochs, val_loss, label='Val Loss')
-    ax[1].plot(epochs, train_roc, label='Train ROC')
-    ax[1].plot(epochs, val_roc, label='Val ROC')
-    
-    ax[0].legend()
-    ax[1].legend()
-    
-    plt.tight_layout()
-    
-    if not os.path.exists(SAVE_DIR):
-        os.makedirs(SAVE_DIR)
-    
-    save_path = f"{SAVE_DIR}/{model_name}_{loss_fn}_{neg_samp}.png"
-    plt.savefig(save_path)
-    print(f"Plot saved to {save_path}")
-    plt.show()
-
 def evaluate_model(stats_file, model_fil, args):
     stats = load_stats(stats_file)
     if not stats:
@@ -83,6 +40,7 @@ def evaluate_model(stats_file, model_fil, args):
     loss_fn = args['loss_fn']
     neg_samp = args['neg_samp']
     conv_layer = args['conv_layer']
+    n_nodes = args['n_nodes']
     
     with open('../assets/graph_kcore.gpickle', 'rb') as f:
         G = pickle.load(f)
@@ -90,18 +48,6 @@ def evaluate_model(stats_file, model_fil, args):
     G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
     n_nodes = G.number_of_nodes()
     _, val_split, test_split = make_data(G)
-    
-    args = {
-        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
-        'emb_size': 64,
-        'weight_decay': 1e-5,
-        'lr': 0.01,
-        'loss_fn': loss_fn,
-        'epochs': 301,
-        'num_layers': 4,
-        'conv_layer': conv_layer,
-        'neg_samp': neg_samp,
-    }
     
     model = GCN(
         num_nodes=n_nodes, num_layers=args['num_layers'],

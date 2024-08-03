@@ -41,6 +41,8 @@ class GCN(torch.nn.Module):
         alpha: Optional[Union[float, Tensor]] = None,
         alpha_learnable = False,
         conv_layer = "LGC",
+        gat_dropout: float = 0.3,
+        gat_n_heads: int = 5,
         name = None,
         **kwargs,
     ):
@@ -85,11 +87,10 @@ class GCN(torch.nn.Module):
         elif conv_layer == "GAT":
           # initialize Graph Attention layer with multiple heads
           # initialize linear layers to aggregate heads 
-          n_heads = 5
           self.convs = ModuleList(
-              [GATConv(in_channels = embedding_dim, out_channels = embedding_dim, heads = n_heads, dropout = 0.5, **kwargs) for _ in range(num_layers)]
+            [GATConv(in_channels=embedding_dim, out_channels=embedding_dim, heads=gat_n_heads, dropout=gat_dropout, **kwargs) for _ in range(num_layers)]
           )
-          self.linears = ModuleList([Linear(n_heads * embedding_dim, embedding_dim) for _ in range(num_layers)])
+          self.linears = ModuleList([Linear(gat_n_heads * embedding_dim, embedding_dim) for _ in range(num_layers)])
 
         elif conv_layer == "SAGE":
           #  initialize GraphSAGE conv

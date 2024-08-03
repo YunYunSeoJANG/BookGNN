@@ -19,12 +19,13 @@ from sklearn.metrics import roc_auc_score
 import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 
+import wandb
+
 from model.gcn import GCN, BPRLoss
 from utils.preprocess import preprocess_graph, make_data
 from utils.sample import sample_negative_edges, sample_hard_negative_edges
 from utils.metrics import metrics, recall_at_k
-from utils.evaluation import evaluate_model, plot_training_stats
-
+from utils.evaluation import evaluate_model
 
 def load_graph():
     # Read interactions from preprocessed json file in data_preprocessing.ipynb
@@ -129,6 +130,15 @@ def train(model, datasets, optimizer, args, n_user, n_item):
         stats['val']['loss'].append(val_loss.item())
         stats['val']['roc'].append(val_roc)
 
+        # Log metrics to wandb
+        wandb.log({
+            "epoch": epoch,
+            "train_loss": loss.item(),
+            "val_loss": val_loss.item(),
+            "train_roc": train_roc,
+            "val_roc": val_roc
+        })
+
         print(f"Epoch {epoch}; Train loss {loss.item()}; Val loss {val_loss.item()}; Train ROC {train_roc}; Val ROC {val_roc}")
 
         if epoch % 10 == 0: 
@@ -137,6 +147,8 @@ def train(model, datasets, optimizer, args, n_user, n_item):
             val_recall = recall_at_k(val_data, model, n_user, n_item, k=300, device=args["device"])
             print(f"Val recall {val_recall}")
             stats['val']['recall'].append(val_recall)
+            # Log recall to wandb
+            wandb.log({"val_recall": val_recall})
 
         if epoch % 20 == 0:
             # save embeddings for future visualization 
@@ -192,20 +204,39 @@ def init_model(num_nodes, args, alpha = False):
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'], weight_decay=args['weight_decay'])
     return model, optimizer 
 
+def get_config_value(config, key, default_value):
+    return getattr(config, key, default_value)
+
 if __name__ == '__main__':
-    parser = ArgumentParser()
+    # Initialize the wandb run
+    wandb.init(project="Prometheus-GNN-Book-Recommendations")
 
-    parser.add_argument('--epochs', type=int, default=301)
-    parser.add_argument('--num_layers', type=int, default=4)
-    parser.add_argument('--lr', type=float, default=0.01)
-    parser.add_argument('--conv_layer', type=str, default="LGC", choices=["LGC", "GAT", "SAGE"]) # ["LGC", "GAT", "SAGE"]
-    parser.add_argument('--neg_samp', type=str, default="random", choices=["random", "hard"]) # ["random", "hard"]
+    # Get the config from the wandb sweep
+    config = wandb.config
 
-    parse_args = parser.parse_args()
+    # Create the argument dictionary
+    args = {
+        'device': 'cuda' if torch.cuda.is_available() else 'cpu',
+        'emb_size': get_config_value(config, 'emb_size', 64),
+        'weight_decay': get_config_value(config, 'weight_decay', 1e-5),
+        'lr': get_config_value(config, 'lr', 0.01),
+        'loss_fn': "BPR",
+        'epochs': get_config_value(config, 'epochs', 301),
+        'num_layers': get_config_value(config, 'num_layers', 4),
+        'conv_layer': get_config_value(config, 'conv_layer', 'LGC'),
+        'neg_samp': get_config_value(config, 'neg_samp', 'random'),
+        'gat_dropout': get_config_value(config, 'gat_dropout', 0.2),
+        'gat_n_heads': get_config_value(config, 'gat_n_heads', 1)
+    }
 
+    # Set the run name
+    run_name = (f"conv_{args['conv_layer']}_epochs_{args['epochs']}_"
+                f"layers_{args['num_layers']}_lr_{args['lr']}_"
+                f"neg_{args['neg_samp']}")
+    wandb.run.name = run_name
 
+    # Load or create the graph
     is_load_graph = not os.path.exists('../assets/graph_kcore.gpickle')
-
     if is_load_graph:
         print("First run. Loading graph from json file and saving it as a gpickle file.")
         G = load_graph()
@@ -214,43 +245,31 @@ if __name__ == '__main__':
         with open('../assets/graph_kcore.gpickle', 'rb') as f:
            G = pickle.load(f)
 
+    # Preprocess the graph
     G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
     n_nodes = G.number_of_nodes()
+    args['n_nodes'] = n_nodes
     train_split, val_split, test_split = make_data(G)
 
-    # create a dictionary of the dataset splits 
+    # Create a dictionary of the dataset splits 
     datasets = {
-        'train':train_split, 
-        'val':val_split, 
+        'train': train_split, 
+        'val': val_split, 
         'test': test_split 
     }
 
-    # Modify the arguments as needed
-    # You might want to change the epoches, num_layers, conv_layer, neg_samp, etc.
-    args = {
-        'device' : 'cuda' if torch.cuda.is_available() else 'cpu',
-        'emb_size' : 64,
-        'weight_decay': 1e-5,
-        'lr': parse_args.lr,
-        'loss_fn': "BPR",
-        'epochs': parse_args.epochs, # [301, 150]
-        'num_layers' : parse_args.num_layers, # [3, 4]
-        'conv_layer': parse_args.conv_layer, # ["LGC", "GAT", "SAGE"]
-        'neg_samp': parse_args.neg_samp, # ["random", "hard"]
-        'n_nodes': n_nodes # [17738]
-    }
-
+    # Initialize the model and optimizer
     model, optimizer = init_model(n_nodes, args)
 
-    # send data, model to GPU if available
+    # Send data, model to GPU if available
     user_idx = torch.Tensor(user_idx).type(torch.int64).to(args["device"])
-    item_idx =torch.Tensor(item_idx).type(torch.int64).to(args["device"])
+    item_idx = torch.Tensor(item_idx).type(torch.int64).to(args["device"])
     datasets['train'].to(args['device'])
     datasets['val'].to(args['device'])
     datasets['test'].to(args['device'])
     model.to(args["device"])
-    
-    # create directory to save model_stats
+
+    # Create directory to save model_stats
     MODEL_STATS_DIR = "model_stats"
     if not os.path.exists(MODEL_STATS_DIR):
       os.makedirs(MODEL_STATS_DIR)
@@ -258,13 +277,17 @@ if __name__ == '__main__':
     # Construct a model name from the args for clarity
     model_name = f"GCN_{args['conv_layer']}_layers{args['num_layers']}_e{args['emb_size']}_nodes{n_nodes}"
 
+    # Train the model
     stats = train(model, datasets, optimizer, args, n_user, n_item)
 
+    # Save the model and stats
     model_file = os.path.join(MODEL_STATS_DIR, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_final.pt")
     torch.save(model.state_dict(), model_file)
 
     stats_file = f"{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl"
-    plot_training_stats(stats_file, args)
     evaluate_model(stats_file, model_file, args)
+
+    # Finish the wandb run
+    wandb.finish()
 
     
