@@ -1,7 +1,7 @@
 import json, pandas as pd
 import os
 
-def preprocess_books(path = '../goodreads/goodreads_books_poetry.json', save = '../datasets/books_poetry.json'):
+def preprocess_books(path = '../goodreads/goodreads_books_mystery_thriller_crime.json', save = '../datasets/books_mystery_thriller_crime.json'):
     with open(path) as f:
         df = pd.DataFrame(json.loads(line) for line in f)
 
@@ -18,7 +18,7 @@ def preprocess_books(path = '../goodreads/goodreads_books_poetry.json', save = '
     os.makedirs('../datasets', exist_ok=True)
     df.to_json(save, orient='records', lines=True)
 
-def preprocess_interactions(path = '../goodreads/goodreads_interactions_poetry.json', save = '../datasets/interactions_poetry.json'):
+def preprocess_interactions(path = '../goodreads/goodreads_interactions_mystery_thriller_crime.json', save = '../datasets/interactions_mystery_thriller_crime.json'):
     with open(path) as f:
         df = pd.DataFrame(json.loads(line) for line in f)
 

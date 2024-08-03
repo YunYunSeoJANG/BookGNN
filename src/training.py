@@ -28,11 +28,11 @@ from utils.evaluation import evaluate_model, plot_training_stats
 
 def load_graph():
     # Read interactions from preprocessed json file in data_preprocessing.ipynb
-    with open('../datasets/interactions_poetry.json') as f:
+    with open('../datasets/interactions_mystery_thriller_crime.json') as f:
       users = pd.DataFrame(json.loads(line) for line in f)
 
     # is it necessary? it doesn't seem to be used
-    with open('../datasets/books_poetry.json') as f:
+    with open('../datasets/books_mystery_thriller_crime.json') as f:
       items = pd.DataFrame(json.loads(line) for line in f)
 
     # Make an empty graph
@@ -144,6 +144,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
             if not os.path.exists(path):
                 os.makedirs(path)
             torch.save(model.embedding.weight, os.path.join("model_embeddings", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
+            torch.save(model.predict_link_embedding, os.path.join("model_predict_link_embedding", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
 
     pickle.dump(stats, open(f"model_stats/{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl", "wb"))
     return stats
@@ -180,31 +181,6 @@ def val(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, neg
     roc = metrics(labels, scores)
     
   return loss, roc, neg_edge_index, neg_edge_label
-
-def test(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, neg_edge_label = None):
-
-  model.eval()
-  with torch.no_grad(): # want to save RAM 
-
-    # conduct negative sampling 
-    if args['neg_samp'] == "random":
-      neg_edge_index, neg_edge_label = sample_negative_edges(data, n_user, n_item, args["device"])
-    elif args['neg_samp'] == "hard":
-      if epoch % 5 == 0 or neg_edge_index is None: 
-        neg_edge_index, neg_edge_label = sample_hard_negative_edges(
-            data, model, n_user, n_item, args["device"], batch_size = 500,
-            frac_sample = 1 - (0.5 * epoch / args["epochs"])
-        )
-    # obtain model embedding
-    embed = model.get_embedding(data.edge_index)
-    # calculate pos, neg scores using embedding 
-    pos_scores = model.predict_link_embedding(embed, data.edge_label_index)
-    neg_scores = model.predict_link_embedding(embed, neg_edge_index)
-    # concatenate pos, neg scores together and evaluate loss 
-    scores = torch.cat((pos_scores, neg_scores), dim = 0)
-    labels = torch.cat((data.edge_label, neg_edge_label), dim = 0)
-    
-  return scores, labels, neg_edge_index, neg_edge_label
 
 def init_model(num_nodes, args, alpha = False):
     print("initialize model...")

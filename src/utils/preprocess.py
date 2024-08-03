@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch_geometric.data import Data
 from torch_geometric.transforms import RandomLinkSplit
+import pickle
 
 
 def preprocess_graph(G):
@@ -34,6 +35,9 @@ def preprocess_graph(G):
     
     # print(n_user, n_item) # 11842 5896
 
+    with open('../../assets/node2id.pkl', 'wb') as file:
+      pickle.dump(node2id, file)
+
     return G, new_user_idx, new_item_idx, n_user, n_item
 
 
@@ -47,6 +51,43 @@ def make_data(G):
 
     # convert to train/val/test splits
     transform = RandomLinkSplit(
+        is_undirected=True, 
+        add_negative_train_samples=False, 
+        neg_sampling_ratio=0,
+        num_val=0.15, num_test=0.15
+    )
+    train_split, val_split, test_split = transform(graph_data)
+
+    # It was hard to understand for me... refer to https://github.com/pyg-team/pytorch_geometric/discussions/5189#discussioncomment-3378727 :)
+
+    # Edge index: message passing edges
+    # : testing edges (not the real edges)
+    train_split.edge_index = train_split.edge_index.type(torch.int64)
+    val_split.edge_index = val_split.edge_index.type(torch.int64)
+    test_split.edge_index = test_split.edge_index.type(torch.int64)
+
+    # Edge label index: supervision edges
+    # : ground truth edges
+    train_split.edge_label_index = train_split.edge_label_index.type(torch.int64)
+    val_split.edge_label_index = val_split.edge_label_index.type(torch.int64)
+    test_split.edge_label_index = test_split.edge_label_index.type(torch.int64)
+
+    return train_split, val_split, test_split
+
+
+def make_data_for_test(G):
+    num_nodes = G.number_of_nodes() # 17738 = 11842 + 5896
+    num_edges = G.number_of_edges() # 767616
+    print(num_nodes, num_edges) # 17738 767616
+
+    edge_idx = torch.Tensor(np.array(G.edges()).T) # torch.Size([2, 767616]) = [2, n_edges]
+    graph_data = Data(edge_index = edge_idx, num_nodes = num_nodes)
+
+    # convert to train/val/test splits
+    transform = ///
+    
+    
+    RandomLinkSplit(
         is_undirected=True, 
         add_negative_train_samples=False, 
         neg_sampling_ratio=0,
