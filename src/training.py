@@ -20,13 +20,12 @@ import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 
 import wandb
-from sweep_config import sweep_config, sweep_id
 
 from model.gcn import GCN, BPRLoss
 from utils.preprocess import preprocess_graph, make_data
 from utils.sample import sample_negative_edges, sample_hard_negative_edges
 from utils.metrics import metrics, recall_at_k
-from utils.evaluation import evaluate_model, plot_training_stats
+from utils.evaluation import evaluate_model
 
 def load_graph():
     # Read interactions from preprocessed json file in data_preprocessing.ipynb
@@ -209,10 +208,13 @@ def get_config_value(config, key, default_value):
     return getattr(config, key, default_value)
 
 if __name__ == '__main__':
+    # Initialize the wandb run
+    wandb.init(project="Prometheus-GNN-Book-Recommendations")
 
-    wandb.init()
+    # Get the config from the wandb sweep
     config = wandb.config
 
+    # Create the argument dictionary
     args = {
         'device': 'cuda' if torch.cuda.is_available() else 'cpu',
         'emb_size': get_config_value(config, 'emb_size', 64),
@@ -227,13 +229,14 @@ if __name__ == '__main__':
         'gat_n_heads': get_config_value(config, 'gat_n_heads', 1)
     }
 
+    # Set the run name
     run_name = (f"conv_{args['conv_layer']}_epochs_{args['epochs']}_"
                 f"layers_{args['num_layers']}_lr_{args['lr']}_"
                 f"neg_{args['neg_samp']}")
     wandb.run.name = run_name
 
+    # Load or create the graph
     is_load_graph = not os.path.exists('../assets/graph_kcore.gpickle')
-
     if is_load_graph:
         print("First run. Loading graph from json file and saving it as a gpickle file.")
         G = load_graph()
@@ -242,28 +245,31 @@ if __name__ == '__main__':
         with open('../assets/graph_kcore.gpickle', 'rb') as f:
            G = pickle.load(f)
 
+    # Preprocess the graph
     G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
     n_nodes = G.number_of_nodes()
+    args['n_nodes'] = n_nodes
     train_split, val_split, test_split = make_data(G)
 
-    # create a dictionary of the dataset splits 
+    # Create a dictionary of the dataset splits 
     datasets = {
-        'train':train_split, 
-        'val':val_split, 
+        'train': train_split, 
+        'val': val_split, 
         'test': test_split 
     }
 
+    # Initialize the model and optimizer
     model, optimizer = init_model(n_nodes, args)
 
-    # send data, model to GPU if available
+    # Send data, model to GPU if available
     user_idx = torch.Tensor(user_idx).type(torch.int64).to(args["device"])
-    item_idx =torch.Tensor(item_idx).type(torch.int64).to(args["device"])
+    item_idx = torch.Tensor(item_idx).type(torch.int64).to(args["device"])
     datasets['train'].to(args['device'])
     datasets['val'].to(args['device'])
     datasets['test'].to(args['device'])
     model.to(args["device"])
-    
-    # create directory to save model_stats
+
+    # Create directory to save model_stats
     MODEL_STATS_DIR = "model_stats"
     if not os.path.exists(MODEL_STATS_DIR):
       os.makedirs(MODEL_STATS_DIR)
@@ -271,16 +277,17 @@ if __name__ == '__main__':
     # Construct a model name from the args for clarity
     model_name = f"GCN_{args['conv_layer']}_layers{args['num_layers']}_e{args['emb_size']}_nodes{n_nodes}"
 
+    # Train the model
     stats = train(model, datasets, optimizer, args, n_user, n_item)
 
+    # Save the model and stats
     model_file = os.path.join(MODEL_STATS_DIR, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_final.pt")
     torch.save(model.state_dict(), model_file)
 
     stats_file = f"{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl"
-    plot_training_stats(stats_file, args)
     evaluate_model(stats_file, model_file, args)
 
-    wandb.agent(sweep_id, function=train)
+    # Finish the wandb run
     wandb.finish()
 
     
