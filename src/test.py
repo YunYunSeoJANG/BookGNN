@@ -116,7 +116,7 @@ if __name__ == '__main__':
     model.to(args["device"])
     model.eval()
 
-    train_split, val_split, test_split = make_data_for_test(G)
+    train_split, test_split = make_data_for_test(G)
     datasets = {
         'train':train_split,
         'test': test_split 
