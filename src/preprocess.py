@@ -22,11 +22,11 @@ def preprocess_interactions():
     with open('../goodreads/goodreads_interactions_poetry.json') as f:
         df = pd.DataFrame(json.loads(line) for line in f)
 
-    df = df.loc[:,['book_id', 'user_id', 'is_read', 'rating']]
+    df = df.loc[:,['book_id', 'user_id']] # , 'is_read', 'rating']]
 
     df.to_json('../datasets/interactions_poetry.json', orient='records', lines=True)
 
 
 if __name__ == '__main__':
-    preprocess_books()
+    #preprocess_books()
     preprocess_interactions()
