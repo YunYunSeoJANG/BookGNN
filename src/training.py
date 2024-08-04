@@ -29,7 +29,7 @@ from utils.evaluation import evaluate_model
 
 def load_graph():
     # Read interactions from preprocessed json file in data_preprocessing.ipynb
-    with open('../datasets/interactions_poetry.json') as f:
+    with open('../datasets/interactions_mystery_thriller_crime.json') as f:
       users = pd.DataFrame(json.loads(line) for line in f)
 
     # is it necessary? it doesn't seem to be used
@@ -156,6 +156,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
             if not os.path.exists(path):
                 os.makedirs(path)
             torch.save(model.embedding.weight, os.path.join("model_embeddings", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
+            torch.save(model.predict_link_embedding, os.path.join("model_predict_link_embedding", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
 
     pickle.dump(stats, open(f"model_stats/{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl", "wb"))
     return stats
