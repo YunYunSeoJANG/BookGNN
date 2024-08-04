@@ -5,16 +5,14 @@ def preprocess_books():
     with open('../goodreads/goodreads_books_poetry.json') as f:
         df = pd.DataFrame(json.loads(line) for line in f)
 
-    aut=df.loc[:,'authors']
-    ddf = pd.DataFrame(line for line in aut)
-    aut = ddf.loc[:,0]
-    ddf = pd.DataFrame(line for line in aut)
-    ddf = ddf.loc[:,'author_id']
-
-    df.loc[:,'authors'] = ddf
-
-    df = df.loc[:,['book_id', 'average_rating', 'ratings_count', 'authors', 'similar_books', 'title', 'url']]
-
+    #aut=df.loc[:,'authors']
+    #ddf = pd.DataFrame(line for line in aut)
+    #aut = ddf.loc[:,0]
+    #ddf = pd.DataFrame(line for line in aut)
+    #ddf = ddf.loc[:,'author_id']
+    #df.loc[:,'authors'] = ddf
+    #df = df.loc[:,['book_id', 'average_rating', 'ratings_count', 'authors', 'similar_books', 'title', 'url']]
+    df = df.loc[:,['book_id', 'average_rating', 'ratings_count', 'title', 'url']]
     os.makedirs('../datasets', exist_ok=True)
     df.to_json('../datasets/books_poetry.json', orient='records', lines=True)
 

@@ -33,8 +33,8 @@ def load_graph():
       users = pd.DataFrame(json.loads(line) for line in f)
 
     # is it necessary? it doesn't seem to be used
-    with open('../datasets/books_poetry.json') as f:
-      items = pd.DataFrame(json.loads(line) for line in f)
+    #with open('../datasets/books_poetry.json') as f:
+    #  items = pd.DataFrame(json.loads(line) for line in f)
 
     # Make an empty graph
     G = nx.Graph()
@@ -121,7 +121,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
         loss.backward()
         optimizer.step()
 
-        val_loss, val_roc, val_neg_edge, val_neg_label = test(
+        val_loss, val_roc, val_neg_edge, val_neg_label = val(
             model, val_data, args, n_user, n_item, epoch, val_neg_edge, val_neg_label
         )
 
@@ -161,7 +161,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
     return stats
 
 
-def test(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, neg_edge_label = None):
+def val(model, data, args, n_user, n_item, epoch = 0, neg_edge_index = None, neg_edge_label = None):
 
   model.eval()
   with torch.no_grad(): # want to save RAM 
@@ -246,10 +246,11 @@ if __name__ == '__main__':
            G = pickle.load(f)
 
     # Preprocess the graph
-    G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
+    G, user_idx, item_idx, n_user, n_item, _ = preprocess_graph(G)
     n_nodes = G.number_of_nodes()
     args['n_nodes'] = n_nodes
     train_split, val_split, test_split = make_data(G)
+    torch.save(test_split, 'test_split.pt')
 
     # Create a dictionary of the dataset splits 
     datasets = {
@@ -262,11 +263,11 @@ if __name__ == '__main__':
     model, optimizer = init_model(n_nodes, args)
 
     # Send data, model to GPU if available
-    user_idx = torch.Tensor(user_idx).type(torch.int64).to(args["device"])
-    item_idx = torch.Tensor(item_idx).type(torch.int64).to(args["device"])
+    #user_idx = torch.Tensor(user_idx).type(torch.int64).to(args["device"])
+    #item_idx = torch.Tensor(item_idx).type(torch.int64).to(args["device"])
     datasets['train'].to(args['device'])
     datasets['val'].to(args['device'])
-    datasets['test'].to(args['device'])
+    #datasets['test'].to(args['device'])
     model.to(args["device"])
 
     # Create directory to save model_stats

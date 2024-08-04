@@ -10,6 +10,7 @@ def recall_at_k(data, model, n_user, n_item, k = 300, batch_size = 64, device = 
     hits_list = []
     relevant_counts_list = []
 
+    # have to change... ?
     data.edge_index[1,:]=torch.clamp(data.edge_index[1,:], max=n_user+n_item-1, min = n_user)
 
     for batch_start in range(0, n_user, batch_size):

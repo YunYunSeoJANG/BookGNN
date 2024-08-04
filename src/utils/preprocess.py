@@ -34,7 +34,7 @@ def preprocess_graph(G):
     
     # print(n_user, n_item) # 11842 5896
 
-    return G, new_user_idx, new_item_idx, n_user, n_item
+    return G, new_user_idx, new_item_idx, n_user, n_item, id2node
 
 
 def make_data(G):
