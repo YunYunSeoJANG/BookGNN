@@ -144,7 +144,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
         if epoch % 10 == 0: 
             # calculate recall @ K
             # Suggestion: K -> 15~30
-            val_recall = recall_at_k(val_data, model, n_user, n_item, k=300, device=args["device"])
+            val_recall = recall_at_k(val_data, model, n_user, n_item, k=10, device=args["device"])
             print(f"Val recall {val_recall}")
             stats['val']['recall'].append(val_recall)
             # Log recall to wandb

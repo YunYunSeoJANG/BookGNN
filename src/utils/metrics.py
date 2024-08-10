@@ -1,7 +1,7 @@
 import torch    
 from sklearn.metrics import roc_auc_score
 
-def recall_at_k(data, model, n_user, n_item, k = 300, batch_size = 64, device = None):
+def recall_at_k(data, model, n_user, n_item, k = 300, batch_size = 64, device = None, emb_path = None, num_layers = 0):
     with torch.no_grad():
         embeddings = model.get_embedding(data.edge_index)
         user_embeddings = embeddings[:n_user]

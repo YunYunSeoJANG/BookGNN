@@ -25,12 +25,18 @@ from utils.metrics import metrics, recall_at_k
 from utils.evaluation import evaluate_model
 from utils.util import tensor2csv
 
-def test(model, data, n_user, n_item, emb_path):
+def test(args, model, data, n_user, n_item, emb_path):
+    
+    print(n_user, "users, ", n_item, "items")
     batch_size = 64
     k = 10
   # based on recall
     with torch.no_grad():
+        alpha = 1. / (args['num_layers'] + 1)
+        alpha = torch.tensor([alpha] * (args['num_layers'] + 1))
         embeddings = torch.load(emb_path)
+        weights = alpha.softmax(dim=-1)
+        embeddings = embeddings * weights[0]
         #model.get_embedding(data.edge_index)
         user_embeddings = embeddings[:n_user]
         item_embeddings = embeddings[n_user:]
@@ -102,7 +108,7 @@ if __name__ == '__main__':
         'conv_layer': parse_args.conv_layer, # ["LGC", "GAT", "SAGE"]
         'neg_samp': parse_args.neg_samp, # ["random", "hard"]
         'n_nodes': n_nodes, # [17738]
-        'emb path': 'model_embeddings/LGCN_LGC_4_e64_nodes17738_/LGCN_LGC_4_e64_nodes17738__BPR_random_20.pt'
+        'emb path': '/content/BookGNN/model_embeddings/LGCN_LGC_4_e64_nodes17738_/LGCN_LGC_4_e64_nodes17738__BPR_random_20.pt'
     }
 
     test_split = torch.load('../datasets/test_split.pt')
@@ -113,8 +119,7 @@ if __name__ == '__main__':
     #model.eval()
     model = None
 
-    recommend  = test(model, test_split, n_user, n_item, args['emb path'])
-
+    recommend  = test(args, model, test_split, n_user, n_item, args['emb path'])
     TEST_RESULT_DIR = "test_result"
     if not os.path.exists(TEST_RESULT_DIR):
       os.makedirs(TEST_RESULT_DIR)
@@ -122,6 +127,8 @@ if __name__ == '__main__':
     torch.save(recommend, "test_result/recommend.pt")
     tensor2csv(recommend, "test_result/recommend.csv")
     print("test done.")
+    #print("RECALL:", recall_at_k(test_split, None, n_user, n_item, k=10, 
+    #                      device=args["device"]), emb_path=args['emb path'], num_layers=args['num_layers'])
     # add ftn to change id2node and display
 
 
