@@ -1,0 +1,11 @@
+Total nodes: 65
+Total edges: 65
+User nodes: 61
+Book nodes: 4
+
+Top 5 Books by Connections:
+1. The Complete Poems of Emily Dickinson by 7440 (Connections: 29)
+2. Metamorphoses by 1127 (Connections: 29)
+3. Selected Poems by 500 (Connections: 6)
+4. Well Then There Now by 210417 (Connections: 1)
+

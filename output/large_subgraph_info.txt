@@ -1,0 +1,12 @@
+Total nodes: 368
+Total edges: 409
+User nodes: 310
+Book nodes: 58
+
+Top 5 Books by Connections:
+1. The Complete Poems of Emily Dickinson by 7440 (Connections: 117)
+2. Metamorphoses by 1127 (Connections: 110)
+3. Selected Poems by 500 (Connections: 15)
+4. All the Words Are Yours: Haiku on Love by 7075956 (Connections: 14)
+5. The Epic of Gilgamesh by 5158478 (Connections: 13)
+

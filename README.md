@@ -102,11 +102,19 @@ wandb agent pljh0906/Prometheus-GNN-Book-Recommendations/<sweep id> --count <cou
 
 
 
-# 6. Visualize  (WIP)
+# 6. Visualize 📈
+
+It takes about 3 mins (poetry)
 
 ```
-python3 src/visualize.py
+python3 src/visualize.py --large_size 5000 --large_min_edges 150 --small_size 100 --small_max_edges 50
 ```
+
+[Output]
+- subgraph plot (.png)
+- subgraph connections (.json)
+- subgraph info (.txt)
+
 
 # 6. References
 
