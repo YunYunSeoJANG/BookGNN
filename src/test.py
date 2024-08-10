@@ -25,12 +25,12 @@ from utils.metrics import metrics, recall_at_k
 from utils.evaluation import evaluate_model
 from utils.util import tensor2csv
 
-def test(model, data, n_user, n_item):
+def test(model, data, n_user, n_item, emb_path):
     batch_size = 64
     k = 10
   # based on recall
     with torch.no_grad():
-        embeddings = torch.load('model_embeddings/LGCN_LGC_4_e64_nodes17738_/LGCN_LGC_4_e64_nodes17738__BPR_random_20.pt')
+        embeddings = torch.load(emb_path)
         #model.get_embedding(data.edge_index)
         user_embeddings = embeddings[:n_user]
         item_embeddings = embeddings[n_user:]
@@ -102,20 +102,18 @@ if __name__ == '__main__':
         'conv_layer': parse_args.conv_layer, # ["LGC", "GAT", "SAGE"]
         'neg_samp': parse_args.neg_samp, # ["random", "hard"]
         'n_nodes': n_nodes, # [17738]
-        'model path': "model_stats/LGCN_LGC_4_e64_nodes17738__BPR_random_final.pt"
+        'emb path': 'model_embeddings/LGCN_LGC_4_e64_nodes17738_/LGCN_LGC_4_e64_nodes17738__BPR_random_20.pt'
     }
 
-    model = load_model(n_nodes, args)
     test_split = torch.load('../datasets/test_split.pt')
-
-    # send data, model to GPU if available
-    #user_idx = torch.Tensor(user_idx).type(torch.int64).to(args["device"])
-    #item_idx =torch.Tensor(item_idx).type(torch.int64).to(args["device"])
     test_split.to(args['device'])
-    model.to(args["device"])
-    model.eval()
 
-    recommend  = test(model, test_split, n_user, n_item)
+    #model = load_model(n_nodes, args)
+    #model.to(args["device"])
+    #model.eval()
+    model = None
+
+    recommend  = test(model, test_split, n_user, n_item, args['emb path'])
 
     TEST_RESULT_DIR = "test_result"
     if not os.path.exists(TEST_RESULT_DIR):
