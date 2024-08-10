@@ -66,7 +66,7 @@ def test(args, model, data, n_user, n_item, emb_path):
           first = 1
           recommend = top_k_indices
     
-    return recommend
+    return recommend + n_item
 
 def load_model(num_nodes, args, alpha = False):
     print("loading model...")
