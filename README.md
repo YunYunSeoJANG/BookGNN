@@ -85,14 +85,36 @@ cd datasets
 # 4. Training 🚀
 
 ```
-python3 src/training.py
+./scripts/train.sh
+```
+If you want parallelized trianing with multiple GPUs, you can add `CUDA_VISIBLE_DEVICES=0` condition in train.sh
+
+You can find out the result plot (train/val loss, train/val ROC) in /train_result_plots
+
+# 5. Wandb Parameter Sweeping 🧹
+
+```
+wandb login
+
+wandb sweep src/sweep_config.yaml
+wandb agent pljh0906/Prometheus-GNN-Book-Recommendations/<sweep id> --count <count>
 ```
 
-# 5. Visualize  (WIP)
+
+
+# 6. Visualize 📈
+
+It takes about 3 mins (poetry)
 
 ```
-python3 src/visualize.py
+python3 src/visualize.py --large_size 5000 --large_min_edges 150 --small_size 100 --small_max_edges 50
 ```
+
+[Output]
+- subgraph plot (.png)
+- subgraph connections (.json)
+- subgraph info (.txt)
+
 
 # 6. References
 

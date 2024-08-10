@@ -9,6 +9,12 @@ assets/
 __pycache__/
 *.pyc
 
+# plotted results
+train_result_plots/
+
+# wandb logs
+wandb/
+
 # venv
 .bookgnn
 
