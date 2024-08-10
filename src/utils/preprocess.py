@@ -6,7 +6,6 @@ from torch_geometric.data import Data
 from torch_geometric.transforms import RandomLinkSplit
 from torch_geometric.utils import index_to_mask
 import pickle
-from linksplit import LinkSplit
 
 
 def preprocess_graph(G):
@@ -72,39 +71,3 @@ def make_data(G):
     test_split.edge_label_index = test_split.edge_label_index.type(torch.int64)
 
     return train_split, val_split, test_split
-
-
-def make_data_for_test(G):
-    num_nodes = G.number_of_nodes() # 17738 = 11842 + 5896
-    num_edges = G.number_of_edges() # 767616
-    print(num_nodes, num_edges) # 17738 767616
-
-    edge_idx = torch.Tensor(np.array(G.edges()).T) # torch.Size([2, 767616]) = [2, n_edges]
-    graph_data = Data(edge_index = edge_idx, num_nodes = num_nodes)
-
-    train_idx = torch.arrange(num_nodes-1)
-    test_idx = torch.arrange(num_nodes-1, num_nodes)
-
-    # Convert indices to boolean masks
-    train_mask = index_to_mask(train_idx, size=num_nodes)
-    test_mask = index_to_mask(test_idx, size=num_nodes)
-
-    transform = LinkSplit(
-        is_undirected=True, 
-        add_negative_train_samples=False, 
-        neg_sampling_ratio=0,
-        num_test=1
-    )
-    train_split, test_split = transform(graph_data)
-
-    # Edge index: message passing edges
-    # : testing edges (not the real edges)
-    train_split.edge_index = train_split.edge_index.type(torch.int64)
-    test_split.edge_index = test_split.edge_index.type(torch.int64)
-
-    # Edge label index: supervision edges
-    # : ground truth edges
-    train_split.edge_label_index = train_split.edge_label_index.type(torch.int64)
-    test_split.edge_label_index = test_split.edge_label_index.type(torch.int64)
-
-    return train_split,test_split

@@ -19,24 +19,27 @@ import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 
 from model.gcn import GCN, BPRLoss
-from utils.preprocess import preprocess_graph, make_data, make_data_for_test
+from utils.preprocess import preprocess_graph, make_data
 from utils.sample import sample_negative_edges, sample_hard_negative_edges
 from utils.metrics import metrics, recall_at_k
 from utils.evaluation import evaluate_model
+from utils.util import tensor2csv
 
 def test(model, data, n_user, n_item):
     batch_size = 64
     k = 10
   # based on recall
     with torch.no_grad():
-        embeddings = model.get_embedding(data.edge_index)
+        embeddings = torch.load('model_embeddings/LGCN_LGC_4_e64_nodes17738_/LGCN_LGC_4_e64_nodes17738__BPR_random_20.pt')
+        #model.get_embedding(data.edge_index)
         user_embeddings = embeddings[:n_user]
         item_embeddings = embeddings[n_user:]
 
     # book data
     # have to change... ?
-    data.edge_index[1,:]=torch.clamp(data.edge_index[1,:], max=n_user+n_item-1, min = n_user)
-
+    #data.edge_index[1,:]=torch.clamp(data.edge_index[1,:], max=n_user+n_item-1, min = n_user)
+    
+    first = 0
     # choose users, size of batch size
     for batch_start in range(0, n_user, batch_size):
         batch_end = min(batch_start + batch_size, n_user)
@@ -51,7 +54,11 @@ def test(model, data, n_user, n_item):
 
         # Find the top k highest scoring items for each playlist in the batch
         _, top_k_indices = torch.topk(scores, k, dim=1)
-        recommend = torch.cat([recommend, top_k_indices])
+        if(first): 
+          recommend = torch.cat([recommend, top_k_indices])
+        else:
+          first = 1
+          recommend = top_k_indices
     
     return recommend
 
@@ -63,7 +70,7 @@ def load_model(num_nodes, args, alpha = False):
         alpha_learnable = alpha
     )
     model.to(args["device"])
-    model.load(args["model path"])
+    #model.load(args["model path"])
     return model
 
 if __name__ == '__main__':
@@ -95,11 +102,11 @@ if __name__ == '__main__':
         'conv_layer': parse_args.conv_layer, # ["LGC", "GAT", "SAGE"]
         'neg_samp': parse_args.neg_samp, # ["random", "hard"]
         'n_nodes': n_nodes, # [17738]
-        'model path': "need to fix"
+        'model path': "model_stats/LGCN_LGC_4_e64_nodes17738__BPR_random_final.pt"
     }
 
     model = load_model(n_nodes, args)
-    test_split = torch.load('test_split.pt')
+    test_split = torch.load('../datasets/test_split.pt')
 
     # send data, model to GPU if available
     #user_idx = torch.Tensor(user_idx).type(torch.int64).to(args["device"])
@@ -109,7 +116,14 @@ if __name__ == '__main__':
     model.eval()
 
     recommend  = test(model, test_split, n_user, n_item)
-    torch.save(recommend, "recommend.pt")
+
+    TEST_RESULT_DIR = "test_result"
+    if not os.path.exists(TEST_RESULT_DIR):
+      os.makedirs(TEST_RESULT_DIR)
+
+    torch.save(recommend, "test_result/recommend.pt")
+    tensor2csv(recommend, "test_result/recommend.csv")
+    print("test done.")
     # add ftn to change id2node and display
 
 

@@ -29,7 +29,7 @@ from utils.evaluation import evaluate_model
 
 def load_graph():
     # Read interactions from preprocessed json file in data_preprocessing.ipynb
-    with open('../datasets/interactions_mystery_thriller_crime.json') as f:
+    with open('../datasets/interactions_poetry.json') as f:
       users = pd.DataFrame(json.loads(line) for line in f)
 
     # is it necessary? it doesn't seem to be used
@@ -156,7 +156,7 @@ def train(model, datasets, optimizer, args, n_user, n_item):
             if not os.path.exists(path):
                 os.makedirs(path)
             torch.save(model.embedding.weight, os.path.join("model_embeddings", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
-            torch.save(model.predict_link_embedding, os.path.join("model_predict_link_embedding", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
+            #torch.save(model.predict_link_embedding, os.path.join("model_predict_link_embedding", model.name, f"{model.name}_{args['loss_fn']}_{args['neg_samp']}_{epoch}.pt"))
 
     pickle.dump(stats, open(f"model_stats/{model.name}_{args['loss_fn']}_{args['neg_samp']}.pkl", "wb"))
     return stats
@@ -222,7 +222,7 @@ if __name__ == '__main__':
         'weight_decay': get_config_value(config, 'weight_decay', 1e-5),
         'lr': get_config_value(config, 'lr', 0.01),
         'loss_fn': "BPR",
-        'epochs': get_config_value(config, 'epochs', 301),
+        'epochs': get_config_value(config, 'epochs', 15),
         'num_layers': get_config_value(config, 'num_layers', 4),
         'conv_layer': get_config_value(config, 'conv_layer', 'LGC'),
         'neg_samp': get_config_value(config, 'neg_samp', 'random'),
@@ -251,7 +251,7 @@ if __name__ == '__main__':
     n_nodes = G.number_of_nodes()
     args['n_nodes'] = n_nodes
     train_split, val_split, test_split = make_data(G)
-    torch.save(test_split, 'test_split.pt')
+    torch.save(test_split, '../datasets/test_split.pt')
 
     # Create a dictionary of the dataset splits 
     datasets = {
