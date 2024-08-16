@@ -246,6 +246,33 @@ if __name__ == '__main__':
         with open('../assets/graph_kcore.gpickle', 'rb') as f:
            G = pickle.load(f)
 
+    # 데모용 user 및 edge 생성
+    import itertools
+
+    books = [
+        {"book_id": "18967440", "title": "Naruto, Vol. 1: Uzumaki Naruto"},
+        {"book_id": "870", "title": "Fullmetal Alchemist, Vol. 1"},
+        {"book_id": "29390788", "title": "Death Note Vol. 1: Boredom"},
+        {"book_id": "13154150", "title": "Attack on Titan, Vol. 1"},
+        {"book_id": "23727", "title": "Nausicaä of the Valley of the Wind, Vol. 1"},
+        {"book_id": "16281682", "title": "The Walking Dead, Vol. 1: Days Gone Bye"},
+        {"book_id": "3033760", "title": "Slam Dunk, Vol. 1"},
+        {"book_id": "4645370", "title": "The Invincible Iron Man, Volume 1: The Five Nightmares"},
+        {"book_id": "27406716", "title": "Haikyu!!, Vol. 1"},
+        {"book_id": "13329670", "title": "Batman: Year One"},
+    ]
+    combinations = list(itertools.combinations(books, 3))
+
+    i = 1
+    for book1, book2, book3 in combinations:
+        G.add_nodes_from(f'user_{i}', type='user')
+        G.add_edges_from([
+            (f'user_{i}', book1['book_id']),
+            (f'user_{i}', book2['book_id']),
+            (f'user_{i}', book3['book_id'])
+        ])
+        i += 1
+
     # Preprocess the graph
     G, user_idx, item_idx, n_user, n_item, _ = preprocess_graph(G)
     n_nodes = G.number_of_nodes()
