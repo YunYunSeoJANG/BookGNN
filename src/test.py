@@ -29,7 +29,7 @@ def test(args, model, data, n_user, n_item, emb_path):
     
     print(n_user, "users, ", n_item, "items")
     batch_size = 64
-    k = 10
+    k = 3
   # based on recall
     with torch.no_grad():
         alpha = 1. / (args['num_layers'] + 1)
@@ -37,14 +37,9 @@ def test(args, model, data, n_user, n_item, emb_path):
         embeddings = torch.load(emb_path)
         weights = alpha.softmax(dim=-1)
         embeddings = embeddings * weights[0]
-        #model.get_embedding(data.edge_index)
         user_embeddings = embeddings[:n_user]
         item_embeddings = embeddings[n_user:]
 
-    # book data
-    # have to change... ?
-    #data.edge_index[1,:]=torch.clamp(data.edge_index[1,:], max=n_user+n_item-1, min = n_user)
-    
     first = 0
     # choose users, size of batch size
     for batch_start in range(0, n_user, batch_size):
@@ -114,9 +109,6 @@ if __name__ == '__main__':
     test_split = torch.load('../datasets/test_split.pt')
     test_split.to(args['device'])
 
-    #model = load_model(n_nodes, args)
-    #model.to(args["device"])
-    #model.eval()
     model = None
 
     recommend  = test(args, model, test_split, n_user, n_item, args['emb path'])
@@ -124,12 +116,11 @@ if __name__ == '__main__':
     if not os.path.exists(TEST_RESULT_DIR):
       os.makedirs(TEST_RESULT_DIR)
 
-    torch.save(recommend, "test_result/recommend.pt")
+    recommended_nodes = [id2node[id.item()] for id in recommend]
     tensor2csv(recommend, "test_result/recommend.csv")
+    tensor2csv(recommended_nodes, "test_result/recommended_nodes.csv")
     print("test done.")
-    #print("RECALL:", recall_at_k(test_split, None, n_user, n_item, k=10, 
-    #                      device=args["device"]), emb_path=args['emb path'], num_layers=args['num_layers'])
-    # add ftn to change id2node and display
+
 
 
     
