@@ -24,7 +24,6 @@ def preprocess_interactions(path = '../goodreads/goodreads_interactions_poetry.j
 
     df.to_json(save, orient='records', lines=True)
 
-
 if __name__ == '__main__':
     #preprocess_books()
     preprocess_interactions()
