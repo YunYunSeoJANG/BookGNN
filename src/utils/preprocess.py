@@ -9,34 +9,31 @@ import pickle
 
 
 def preprocess_graph(G):
-    n_nodes, n_edges = G.number_of_nodes(), G.number_of_edges()
-
+    # n_nodes, n_edges = G.number_of_nodes(), G.number_of_edges()
     
     sorted_nodes = sorted(list(G.nodes()))
     
-    # change book_ids and user_ids into integers
-    node2id = dict(zip(sorted_nodes, np.arange(n_nodes)))
-    id2node = dict(zip(np.arange(n_nodes), sorted_nodes))
-
-    G = nx.relabel_nodes(G, node2id)
-    
-    user_idx = [i for i, v in enumerate(node2id.keys()) if 'user' in G.nodes[i]['type']]
-    item_idx = [i for i, v in enumerate(node2id.keys()) if 'book' in G.nodes[i]['type']]
-
-    n_user, n_item = len(user_idx), len(item_idx)
+    user_node2num = {v: i for i, v in enumerate(sorted_nodes) if 'user' in G.nodes[v]['type']}
+    item_node2num = {v: i for i, v in enumerate(sorted_nodes) if 'book' in G.nodes[v]['type']}
+    n_user, n_item = len(user_node2num), len(item_node2num)
 
     new_user_idx = [i for i in range (n_user)]
     new_item_idx = [i+n_user for i in range (n_item)]
-    
-    node2id = dict(zip(user_idx, new_user_idx))
-    temp = dict(zip(item_idx, new_item_idx))
-    node2id.update(temp)
-    
-    G = nx.relabel_nodes(G, node2id)
+
+    id2idx = dict(zip([k for k, v in user_node2num.items()], new_user_idx))
+    temp = dict(zip([k for k, v in item_node2num.items()], new_item_idx))
+    id2idx.update(temp)
+
+    G = nx.relabel_nodes(G, id2idx)
+
+    idx2id = {v:k for k,v in id2idx.items()}
+
+    # with open('id2idx.pickle','wb') as fw:
+    #     pickle.dump(id2idx, fw)
     
     # print(n_user, n_item) # 11842 5896
 
-    return G, new_user_idx, new_item_idx, n_user, n_item, id2node
+    return G, new_user_idx, new_item_idx, n_user, n_item, idx2id
 
 
 def make_data(G):
