@@ -21,8 +21,21 @@ def recommend_books(user_id, user_embeddings, item_embeddings, item_idx, idx_id)
     return recommended_books
 
 def top_5_keys_by_value(d):
+    book_options = torch.load("path") # have to add path later...
+    start = 0
+    recommend = torch.tensor([])
     sorted_keys = sorted(d, key=d.get, reverse=True)
-    return sorted_keys[:5]
+
+    i = 0
+    while(start<5):
+        if(sorted_keys[i] not in book_options):
+            if(start>0):
+                recommend = torch.cat([recommend, torch.tensor([sorted_keys[i]])])
+            else:
+                recommend = torch.tensor([sorted_keys[i]])
+            start = start + 1
+        i = i+1
+    return recommend
 
 if __name__ == "__main__":
     print("Loading graph from gpickle file.")
