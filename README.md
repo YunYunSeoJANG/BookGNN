@@ -91,6 +91,12 @@ If you want parallelized trianing with multiple GPUs, you can add `CUDA_VISIBLE_
 
 You can find out the result plot (train/val loss, train/val ROC) in /train_result_plots
 
+
+## 4.1. Training with comics & graphic dataset
+```
+python3 src/training_comics.py
+```
+
 # 5. Wandb Parameter Sweeping 🧹
 
 ```

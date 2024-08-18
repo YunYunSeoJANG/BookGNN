@@ -244,6 +244,7 @@ if __name__ == '__main__':
         toc = time.time()
         print(f"Time taken to load graph: {toc-tic} seconds")
 
+    
     # For Demo
     import itertools
 
@@ -259,11 +260,17 @@ if __name__ == '__main__':
         {"book_id": "27406716", "title": "Haikyu!!, Vol. 1"},
         {"book_id": "13329670", "title": "Batman: Year One"},
     ]
+
+    for book in books:
+        if not G.has_node(book['book_id']):
+            G.add_node(book['book_id'], type='book')
+
+
     combinations = list(itertools.combinations(books, 3))
 
     i = 1
     for book1, book2, book3 in combinations:
-        G.add_nodes_from(f'user_{i}', type='user')
+        G.add_node(f'user_{i}', type='user')
         G.add_edges_from([
             (f'user_{i}', book1['book_id']),
             (f'user_{i}', book2['book_id']),
@@ -272,7 +279,7 @@ if __name__ == '__main__':
         i += 1
 
     # Preprocess the graph
-    G, user_idx, item_idx, n_user, n_item = preprocess_graph(G)
+    G, user_idx, item_idx, n_user, n_item, _ = preprocess_graph(G)
     n_nodes = G.number_of_nodes()
     args['n_nodes'] = n_nodes
     train_split, val_split, test_split = make_data(G)
