@@ -265,7 +265,7 @@ if __name__ == '__main__':
 
     i = 1
     for book1, book2, book3 in combinations:
-        G.add_nodes_from(f'user_{i}', type='user')
+        G.add_node(f'user_{i}', type='user')
         G.add_edges_from([
             (f'user_{i}', book1['book_id']),
             (f'user_{i}', book2['book_id']),
