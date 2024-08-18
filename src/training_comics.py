@@ -228,7 +228,7 @@ if __name__ == '__main__':
     # Set the run name
     run_name = (f"conv_{args['conv_layer']}_epochs_{args['epochs']}_"
                 f"layers_{args['num_layers']}_lr_{args['lr']}_"
-                f"neg_{args['neg_samp']}_final")
+                f"neg_{args['neg_samp']}_final_ver2")
     wandb.run.name = run_name
 
     # Load or create the graph
@@ -249,23 +249,18 @@ if __name__ == '__main__':
     import itertools
 
     books = [
-        {"book_id": "18967440", "title": "Naruto, Vol. 1: Uzumaki Naruto"},
-        {"book_id": "870", "title": "Fullmetal Alchemist, Vol. 1"},
-        {"book_id": "29390788", "title": "Death Note Vol. 1: Boredom"},
-        {"book_id": "13154150", "title": "Attack on Titan, Vol. 1"},
-        {"book_id": "23727", "title": "Nausicaä of the Valley of the Wind, Vol. 1"},
-        {"book_id": "16281682", "title": "The Walking Dead, Vol. 1: Days Gone Bye"},
         {"book_id": "3033760", "title": "Slam Dunk, Vol. 1"},
         {"book_id": "4645370", "title": "The Invincible Iron Man, Volume 1: The Five Nightmares"},
         {"book_id": "27406716", "title": "Haikyu!!, Vol. 1"},
-        {"book_id": "13329670", "title": "Batman: Year One"},
+        {"book_id":"12614733", "title":"X-Men: Age of Apocalypse Omnibus"},
+        {"book_id":"26030947", "title":"Amazing Spider-Man: Worldwide, Vol. 1"},
+        {"book_id":"24496462", "title":"Star Wars #1"},
+        {"book_id":"4945364", "title":"Slam Dunk, Vol. 2"},
+        {"book_id":"22323394", "title":"Sherlock Holmes: The Hound of the Baskervilles"},
+        {"book_id":"1953753", "title":"\u540d\u63a2\u5075\u30b3\u30ca\u30f3 26 (Detective Conan #26)"},
+        {"book_id":"18215802", "title":"\uc2e0\uc758 \ud0d1 1 (Tower of God, #1)"},
     ]
-
-    for book in books:
-        if not G.has_node(book['book_id']):
-            G.add_node(book['book_id'], type='book')
-
-
+    
     combinations = list(itertools.combinations(books, 3))
 
     i = 1
