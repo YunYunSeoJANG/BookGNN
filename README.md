@@ -1,8 +1,11 @@
+<img width="2119" alt="Frame 5" src="https://github.com/user-attachments/assets/9d8d8079-2d1f-4ca2-856e-d9b46a379123">
+
+
 # 0. DATASET OVERVIEW
 From [Goodreads Book Graph Datasets](https://mengtingwan.github.io/data/goodreads.html), includes book/user/review ids, **Poetry (36,514 books, 2,734,350 interactions, 154,555 detailed reviews)**
-cf. reviews는 interaction중 review text가 긴 것을 따로 모아 놓은 것임.
+cf. 'review' consist of 'interactions' where the 'review' text is particularly lengthy.
 
-아래는 `"book_id": "402128"` 에 대한 예시
+Below are the examples of the case `"book_id": "402128"`
 
 ### 1. goodreads_books_poetry
 36,514 books
@@ -106,14 +109,31 @@ wandb sweep src/sweep_config.yaml
 wandb agent pljh0906/Prometheus-GNN-Book-Recommendations/<sweep id> --count <count>
 ```
 
+# 6. Show Result
 
+```
+python3 src/show_list.py
+```
 
-# 6. Visualize  (WIP)
+# 7. Visualization
 
 ```
 python3 src/visualize.py
 ```
 
-# 6. References
+# 8. Members
+
+**장윤서 (Leader)** Data Preprocessing, Skeleton Code Revision, Test Code Setting, GNN Seminar
+
+**김준석** Parameter Search, Recommendation System Setting, Demo Setting (show_list.py)
+
+**김지환** Code Review & Revision (.ipynb to .py), Model Scale-up (Poetry to Comics)
+
+**문재원** Code Review, Recommendation System Setting, Website Development
+
+**박준형** Graph Visualization, Code Review, Wandb setting (Parameter Sweep, Optimization)
+
+
+# 9. References
 
 [networkx](https://medium.com/@harshkjoya/connecting-the-dots-creating-network-graphs-from-pandas-dataframes-with-networkx-9c4fb60089cf), [Spotify RS](https://medium.com/stanford-cs224w/spotify-track-neural-recommender-system-51d266e31e16)
