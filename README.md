@@ -109,19 +109,19 @@ wandb sweep src/sweep_config.yaml
 wandb agent pljh0906/Prometheus-GNN-Book-Recommendations/<sweep id> --count <count>
 ```
 
-# 6. Show Result
+# 6. Show Result 📈
 
 ```
 python3 src/show_list.py
 ```
 
-# 7. Visualization
+# 7. Visualization 👁️
 
 ```
 python3 src/visualize.py
 ```
 
-# 8. Members
+# 8. Members 👋
 
 **장윤서 (Leader)** Data Preprocessing, Skeleton Code Revision, Test Code Setting, GNN Seminar
 
@@ -134,6 +134,6 @@ python3 src/visualize.py
 **박준형** Graph Visualization, Code Review, Wandb setting (Parameter Sweep, Optimization)
 
 
-# 9. References
+# 9. References 📄
 
 [networkx](https://medium.com/@harshkjoya/connecting-the-dots-creating-network-graphs-from-pandas-dataframes-with-networkx-9c4fb60089cf), [Spotify RS](https://medium.com/stanford-cs224w/spotify-track-neural-recommender-system-51d266e31e16)
